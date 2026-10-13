@@ -83,11 +83,17 @@
     if (!entry || !entry.file) return response({error: entry?.error || 'Bu tarih veya sorgu web kopyasında bulunmuyor. PC panelinden kullanılabilir.'}, 503);
     staleLabel(entry);
     const result = await nativeFetch(new URL(entry.file + '?v=' + encodeURIComponent(entry.updated_at), base), options);
-    if (!result.ok || !playable) return result;
+    if (!result.ok || url.pathname !== '/api/live-matches') return result;
     const data = await result.json();
-    data.rows = (data.rows || []).filter(row => row.playable);
-    data.counts = {};
-    for (const row of data.rows) data.counts[row.bucket] = (data.counts[row.bucket] || 0) + 1;
+    for (const row of data.rows || []) {
+      const collected = Date.parse(row.collected_at || '');
+      if (Number.isFinite(collected)) row.age_seconds = Math.max(0, Math.floor((Date.now() - collected) / 1000));
+    }
+    if (playable) {
+      data.rows = (data.rows || []).filter(row => row.playable);
+      data.counts = {};
+      for (const row of data.rows) data.counts[row.bucket] = (data.counts[row.bucket] || 0) + 1;
+    }
     return response(data);
   };
   document.addEventListener('DOMContentLoaded', () => {
