@@ -13,6 +13,10 @@
     const url = new URL(value, location.href);
     url.searchParams.delete('refresh');
     url.searchParams.delete('_');
+    if (url.pathname === '/api/analysis/recommendations') {
+      const sample = url.searchParams.get('min_sample');
+      if (sample !== null && Number(sample) <= 20) url.searchParams.delete('min_sample');
+    }
     url.searchParams.sort();
     return url.pathname + (url.searchParams.size ? '?' + url.searchParams.toString() : '');
   };
@@ -20,10 +24,12 @@
     const element = document.getElementById('web-publication-note');
     if (!element || !manifest) return;
     const age = Date.now() - Date.parse(manifest.generated_at);
-    const failed = Object.values(manifest.entries).filter(entry => entry.error).length;
+    const active = manifest.active_paths || Object.keys(manifest.entries);
+    const failed = active.filter(path => manifest.entries[path]?.error).length;
     element.classList.toggle('stale', age > 15 * 60000 || failed > 0);
     element.textContent = 'Web paneli · Son aktarım: ' + new Date(manifest.generated_at).toLocaleString('tr-TR', {timeZone: 'Europe/Istanbul'}) +
-      ' · Yaklaşık 5 dakikada bir güncellenir.' +
+      ' · Raporlar hazırlandıkça otomatik aktarılır.' +
+      (manifest.in_progress ? ` · Raporlar yenileniyor (${manifest.completed}/${manifest.requests}).` : '') +
       (age > 15 * 60000 ? ' Güncelleme gecikti; PC kapalı veya bağlantı kesilmiş olabilir.' : '') +
       (failed ? ' Bazı raporlar PC’den alınamadı; mevcut eski kayıtların zamanı ayrıca gösterilir.' : '') +
       ' · Kayıtlı tarihler: ' + manifest.dates.join(', ') +
@@ -34,7 +40,17 @@
     if (!pending) pending = nativeFetch(new URL('snapshot.json?t=' + Date.now(), base), {cache: 'no-store'})
       .then(async result => {
         if (!result.ok) throw new Error('Web verileri henüz yayımlanmadı.');
-        manifest = await result.json(); lastCheck = Date.now(); note(); return manifest;
+        const previous = manifest?.generated_at;
+        manifest = await result.json(); lastCheck = Date.now(); note();
+        if (previous && previous !== manifest.generated_at) {
+          // Use each report's own refresh action; keep the selected date and filters.
+          setTimeout(() => {
+            for (const button of document.querySelectorAll('button[id$="-refresh"]')) {
+              if (!button.disabled && button.getClientRects().length) button.click();
+            }
+          }, 0);
+        }
+        return manifest;
       }).finally(() => {pending = null;});
     return pending;
   }
