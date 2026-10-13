@@ -1,0 +1,4 @@
+#web-publication-note{padding:12px 18px;background:#133a32;color:#d3fff0;font-size:13px;line-height:1.6;border-bottom:1px solid #32765e;overflow-wrap:anywhere}
+#web-publication-note.stale{background:#4a3516;color:#ffdf9a;border-color:#9b752e}
+[hidden]{display:none!important}
+@media(max-width:700px){.brand h1{font-size:20px}.table-responsive{overflow-x:auto;max-width:100%}.content-area{min-width:0}input,select,button{min-height:40px}#web-publication-note{font-size:12px;padding:10px}}

@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<script src="./web-snapshot.js"></script>
+<link rel="stylesheet" href="./web-mobile.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OddsAnalyzer Companion — Maç ve Oran Paneli</title>
+  <link rel="stylesheet" href="./static/style.css?v=20261011-2" />
+</head>
+<body>
+<div id="web-publication-note" role="status">Son yayımlanan veriler yükleniyor…</div>
+  <div class="app-container">
+    <header class="main-header">
+      <div class="header-content">
+        <div class="brand">
+          <span class="brand-badge">COMPANION</span>
+          <h1>OddsAnalyzer — Maç ve Oran Takip Paneli</h1>
+        </div>
+        <div class="header-meta">
+          <span class="read-only-badge">Salt Okunur (Read-Only)</span>
+          <span class="db-path" title="Web paneli">DB: <code>Web paneli</code></span>
+        </div>
+      </div>
+      
+      <!-- Üst Menü / Sekmeler -->
+      <nav class="nav-tabs" role="tablist">
+        <button class="tab-btn" data-tab="tab-live" role="tab" aria-selected="false"><span class="tab-icon">🔴</span> Canlı</button>
+        <div class="nav-menu" id="tools-menu">
+          <button class="nav-menu-trigger" id="tools-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tools-menu-popover">
+            <span class="tab-icon">🧰</span> Araçlar <span class="nav-menu-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-menu-popover" id="tools-menu-popover" aria-label="Araçlar menüsü" hidden>
+            <button class="tab-btn nav-menu-item" data-tab="tab-matches" role="tab" aria-selected="false">
+              <span class="tab-icon">⚽</span><span><strong>Maç Arşivi</strong><small>Maçları ve oran kayıtlarını incele</small></span>
+            </button>
+            <button class="tab-btn tab-btn-featured nav-menu-item" data-tab="tab-research" role="tab" aria-selected="false">
+              <span class="tab-icon">🧭</span><span><strong>Araştırma Arşivi</strong><small>Deneysel çalışmalar ve raporlar</small></span>
+            </button>
+            <button class="tab-btn nav-menu-item" data-tab="tab-backfill" role="tab" aria-selected="false">
+              <span class="tab-icon">🔄</span><span><strong>Veri Toplama</strong><small>Toplama ve tamamlama durumları</small></span>
+            </button>
+            <button class="tab-btn nav-menu-item" data-tab="tab-health" role="tab" aria-selected="false">
+              <span class="tab-icon">🛡️</span><span><strong>Sistem Sağlığı</strong><small>Kaynaklar, işçiler ve veri sağlığı</small></span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="content-area">
+      <!-- SEKME 1: GENEL BAKIŞ -->
+      <section id="tab-overview" class="tab-content active" role="tabpanel">
+        <div class="card summary-header-card">
+          <div class="stat-boxes-grid" id="overview-stats">
+            <div class="stat-box">
+              <span class="stat-label">Toplam Maç</span>
+              <span class="stat-val" id="stat-matches">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Oran Snapshot</span>
+              <span class="stat-val" id="stat-snapshots">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Market Sayısı</span>
+              <span class="stat-val" id="stat-markets">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Toplam Oran Gözlemi</span>
+              <span class="stat-val" id="stat-observations">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Turnuva Sayısı</span>
+              <span class="stat-val" id="stat-competitions">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Tarih Aralığı</span>
+              <span class="stat-val stat-val-sm" id="stat-date-range">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h2>Whitelist Kararları Özeti</h2>
+            <div id="overview-whitelist">Yükleniyor...</div>
+          </div>
+          <div class="card">
+            <h2>Turnuvalara Göre Maç Sayısı</h2>
+            <div id="overview-competitions">Yükleniyor...</div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h2>Son Eklenen Maçlar</h2>
+            <div class="table-responsive">
+              <table id="overview-recent-matches" class="data-table"></table>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Son Oran Güncellemeleri</h2>
+            <div class="table-responsive">
+              <table id="overview-recent-odds" class="data-table"></table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEKME 2: MAÇLAR VE ORANLAR -->
+      <section id="tab-live" class="tab-content" role="tabpanel">
+        <div class="card">
+          <h2>Canlı Maçlar ve Günlük Sonuçlar</h2>
+          <p class="muted">Tahmin kaydı bulunan maçlar gösterilir; resmî, ön izleme ve alternatif kayıtlar dahildir. Hiç tahmin kaydı olmayan maçlar yalnız “Tahmin üretilmeyenler” seçeneğinde görünür. Numaralar filtrelenen listede 1’den başlar. Eksik skorlar — olarak gösterilir.</p>
+          <p class="muted">Yeni tahminler ortak bir İY/MS skoruyla uyumlu olmak zorundadır. Eski çelişkili kayıtlar uyarıyla korunur; ön izlemeler resmî önerilerden ayrı gösterilir.</p>
+          <p class="muted"><strong>Tahminlerin oran kaynağı: Mackolik.</strong> Flashscore tahminleri ayrı sekmede ve ayrı başarı hesabında tutulur. Skorların Flashscore ile tamamlanması, bu tahminlerin oran kaynağını değiştirmez.</p>
+          <p class="muted">Kayıtlı maçların son alınan skorları. Web verileri yaklaşık 5 dakikada bir aktarılır. Skorların kayıt ve aktarım zamanını kontrol edin. Devam eden işlemler ve sağlayıcı beklemeleri süreyi uzatabilir. Bu ekran canlı bahis oranı sunmaz.</p>
+          <div class="filters-row">
+            <label><input type="checkbox" id="live-playable" /> Yalnızca 10 lig/turnuva</label>
+            <label>Tarih <input type="date" id="live-date" /></label>
+            <button id="live-today" class="btn btn-secondary" type="button">Bugün</button>
+            <label>Durum <select id="live-status"><option value="">Tahminli maçlar · Tüm durumlar</option><option value="live">Canlı</option><option value="finished">Biten</option><option value="scheduled">Başlamayan</option><option value="other">İptal / ertelenen</option><option value="no-prediction">Tahmin üretilmeyenler</option></select></label>
+            <label><input type="checkbox" id="live-finished" checked /> Bitenleri göster</label>
+            <input id="live-search" type="search" placeholder="Takım veya lig ara" aria-label="Canlı maçlarda ara" />
+            <button id="live-refresh" class="btn btn-primary" type="button">Yenile</button>
+          </div>
+          <p id="live-summary" role="status">Canlı kayıtlar yükleniyor…</p>
+          <p id="live-error" class="alert-box alert-warn hidden" role="alert"></p>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th class="live-row-number" scope="col" aria-label="Sıra numarası">#</th><th>Maç / Lig</th><th>Başlama</th><th>Durum / Dakika</th><th>İY / Güncel skor</th><th>Skor kontrolü</th><th>Maç öncesi kayıtlı tahminler</th><th>Detay</th></tr></thead>
+            <tbody id="live-body"></tbody>
+          </table></div>
+          <details><summary id="live-delayed-title">Güncelliği doğrulanamayan kayıtlar</summary>
+            <p class="muted">Bu kayıtları şu anda oynanıyor kabul etmiyoruz. Eski maçlar, eksik zamanlar ve gecikmiş skorlar burada kalır.</p>
+            <div class="table-responsive"><table class="data-table"><tbody id="live-delayed-body"></tbody></table></div>
+          </details>
+        </div>
+      </section>
+
+      <section id="tab-kickoff" class="tab-content" role="tabpanel">
+        <div class="card">
+          <div class="section-heading-row"><div><h2>Mackolik Başlangıç Analizi · Deneysel</h2><p class="muted">Canlı Maçlar'ın oran koşulları, seçimin kendi oranı ve oran hareketiyle birlikte değerlendirilir. Ana tahmin maç başına tek seçimdir.</p></div><span class="selection-tag">Mackolik · Ayrı tahmin günlüğü</span></div>
+          <p>Maç öncesinde hazırlanır, başlama saatinde yayımlanır. İlk → son oran, veritabanındaki ilk ölçümden son maç öncesi ölçüme kadardır; sağlayıcının gerçek açılış oranı olduğu varsayılmaz.</p>
+          <div class="daily-match-filters"><label>Tarih <input id="kickoff-date" type="date"></label><button id="kickoff-today" class="btn btn-secondary" type="button">Bugün</button><button id="kickoff-yesterday" class="btn btn-secondary" type="button">Dün</button><button id="kickoff-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="kickoff-status" class="muted" role="status"></p>
+          <div id="kickoff-summary" class="kickoff-summary"></div>
+          <div class="table-responsive"><table class="data-table kickoff-table"><thead><tr><th>Maç / Başlama</th><th>Ana tahmin</th><th>İlk → son oran</th><th>Oran hareketi</th><th>Dayanak</th><th>İY</th><th>MS</th><th>Sonuç</th></tr></thead><tbody id="kickoff-body"><tr><td colspan="8">Sekmeyi açtığında yüklenir.</td></tr></tbody></table></div>
+          <p class="muted">Geriye dönük deney ve başlangıçta kaydedilen yeni maçlar ayrı hesaplanır. Puan, kazanma olasılığı değildir. Hareket yeterli geçmiş örneği varsa sıralamayı etkiler. Kaynak: Mackolik.</p>
+        </div>
+      </section>
+
+      <section id="tab-htft-pairs" class="tab-content" role="tabpanel">
+        <h2>FS → Mackolik · İY/MS İki Seçim</h2>
+        <p>100 benzer FS maçı · İki Mackolik oranı ≥2,00 · FS value ≤1,15. Her seçime 1.000 TL, maç başına 2.000 TL. Geçmiş %70,8 bağımsız doğrulama değildir; kazanç garantisi yoktur.</p>
+        <p>Günlük tarama: canlı maçlar ve Türkiye saatiyle 18:30 veya sonrasında başlayacak maçlar. Canlı incelemeler sonradan üretilmiştir ve ileri testten ayrıdır. Kaydedilen seçimler sonradan değiştirilmez.</p>
+        <label>Tarih <input id="htft-pair-date" type="date"></label> <button id="htft-pair-refresh" type="button">Yenile</button>
+        <p id="htft-pair-state">Yükleniyor…</p><div id="htft-pair-content"></div>
+      </section>
+      <section id="tab-flashscore" class="tab-content" role="tabpanel">
+        <div class="card">
+          <h2>Flashscore Tahminleri · 1xBet · Deneysel</h2>
+          <p>Yalnız Flashscore MS 1 / X / 2 açılış oranı ve maç öncesi hareketi kullanılır. Mackolik tahminleri, oranları ve başarı sayıları bu bölüme aktarılmaz.</p>
+          <p class="muted">6 ana lig + 4 UEFA turnuvası. Maçın son 15 dakikasında, en fazla 5 dakikalık taze oranla değerlendirilir. Aynı seçimde benzer açılış/fiyat/hareket için en az 30 maç ve 7 farklı gün gerekir. Yeterli kanıt yoksa tahmin verilmez. İlk uygun tahmin maç öncesinde sabitlenir; sonuç görülünce değiştirilmez.</p>
+          <div class="daily-match-filters"><label>Tarih <input id="fs-pred-date" type="date"></label><button id="fs-pred-today" class="btn btn-secondary" type="button">Bugün</button><button id="fs-pred-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="fs-pred-status" role="status">Sekmeyi açtığında yüklenir.</p>
+          <div id="fs-pred-summary" class="kickoff-summary"></div>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Maç / Başlama</th><th>Flashscore tahmini</th><th>Açılış → kayıtlı oran</th><th>Hareket / Dayanak</th><th>İY / MS skoru</th><th>Sonuç / Net</th></tr></thead><tbody id="fs-pred-body"><tr><td colspan="6">Henüz yüklenmedi.</td></tr></tbody></table></div>
+          <p class="muted">Başarı yalnız bu günlüğe maç öncesinde kaydedilmiş Flashscore tahminlerinden hesaplanır; geçmiş hareket raporu başarı günlüğü değildir. Geçmiş yüzdeler gelecekteki kazanma olasılığı veya garanti değildir.</p>
+        </div>
+        <div class="card">
+          <h2>FS ham ters sinyali → Mackolik oynanabilir seçenekleri</h2>
+          <p>Ham MS sinyali Flashscore / 1xBet hareketinden üretilir. MS 1 sinyalinde Mackolik MS 0, MS 2, X2 ve deplasman 0,5 Üst; MS 2 sinyalinde MS 0, MS 1, 1X ve ev sahibi 0,5 Üst karşılaştırılır.</p>
+          <p id="fs-hybrid-status" class="muted">Sekmeyi açtığında yüklenir.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Maç</th><th>FS ham sinyali</th><th>Mackolik seçenekleri</th><th>Kaynak / yorum</th></tr></thead><tbody id="fs-hybrid-body"><tr><td colspan="4">Henüz yüklenmedi.</td></tr></tbody></table></div>
+          <p class="muted">İki kaynak birleştirilmez: sinyal FS, gösterilen bahis oranları Mackolik/İddaa. Bu kart otomatik kupon oluşturmaz.</p>
+        </div>
+        <div class="card table-card" id="flashscore-movement-card">
+          <div class="section-heading-row">
+            <div><h2>Flashscore Geçmiş Hareket Raporu · Tahmin başarısı değildir</h2><p class="muted">1xBet MS 1-X-2 oranlar&#305;; y&ouml;n, ba&#351;lang&#305;&ccedil; oran&#305;, saat ve g&uuml;n tekrar&#305; birlikte incelenir. Mackolik verisiyle kar&#305;&#351;t&#305;r&#305;lmaz.</p></div>
+            <div><label>Ba&#351;lang&#305;&ccedil; <input id="flashscore-date-from" type="date" /></label> <label>Biti&#351; <input id="flashscore-date-to" type="date" /></label> <button type="button" id="btn-flashscore-movement" class="btn btn-secondary">Geli&#351;mi&#351; Analiz</button></div>
+          </div>
+          <p id="flashscore-movement-status" class="muted">Analiz y&uuml;kleniyor&hellip;</p>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Tam de&#287;i&#351;im</th><th>Y&ouml;n</th><th>&Ouml;rnek</th><th>Tuttu</th><th>Ba&#351;ar&#305;</th><th>%95 g&uuml;ven aral&#305;&#287;&#305;</th><th>Piyasa beklentisi</th><th>ROI</th><th>G&uuml;n</th><th>Kan&#305;t</th></tr></thead>
+            <tbody id="flashscore-exact-rows"><tr><td colspan="10">Hesaplan&#305;yor&hellip;</td></tr></tbody>
+          </table></div>
+          <details><summary>Oran aral&#305;&#287;&#305; + y&ouml;n + ba&#351;lang&#305;&ccedil; oran&#305; k&#305;r&#305;l&#305;m&#305;</summary><div class="table-responsive"><table class="data-table">
+            <thead><tr><th>De&#287;i&#351;im</th><th>Y&ouml;n</th><th>Ba&#351;lang&#305;&ccedil;</th><th>&Ouml;rnek</th><th>Ba&#351;ar&#305;</th><th>D&uuml;zeltilmi&#351; %</th><th>%95 alt-&uuml;st</th><th>Net</th><th>ROI</th><th>G&uuml;n</th><th>Kan&#305;t</th></tr></thead>
+            <tbody id="flashscore-segment-rows"></tbody>
+          </table></div></details>
+        </div>
+      </section>
+
+      <section id="tab-research" class="tab-content" role="tabpanel">
+        <div class="card research-hero">
+          <div>
+            <span class="eyebrow">DENEYSEL ÇALIŞMALAR</span>
+            <h2>Araştırma Merkezi</h2>
+            <p>Güncel kilitli tahminler, geçmiş doğrulamalar ve eski denemeler artık birbirine karışmadan burada tutulur.</p>
+          </div>
+          <div class="research-source-note">
+            <strong>Kaynaklar ayrı kalır</strong>
+            <span>FS hareketi sinyal üretir; Mackolik/İddaa oynanabilir oranı gösterir.</span>
+          </div>
+        </div>
+
+        <div class="research-section-heading">
+          <div><span class="research-kicker">BUGÜN</span><h2>Kilitli tahminler</h2></div>
+          <p>Sonuç görülmeden önce sabitlenen çalışmalar</p>
+        </div>
+        <div class="research-grid">
+          <article class="research-card research-card-primary">
+            <div class="research-card-top"><span class="research-badge live">Güncel · Kilitli</span><span>27 Eylül 2026</span></div>
+            <h3>FS İY/MS sinyali → Mackolik MS seçimi</h3>
+            <p>İki İY/MS senaryosunun ortak maç sonucu tek MS seçimine dönüştürülür.</p>
+            <ul class="research-picks">
+              <li><span>De Graafschap–Den Bosch</span><strong>MS 1 · 1,96</strong></li>
+              <li><span>Çin–Yeni Zelanda</span><strong>MS 2 · 1,87</strong></li>
+            </ul>
+            <div class="research-actions"><a class="btn btn-primary" href="#web-publication-note" target="_blank" rel="noopener">Raporu aç</a><span>Sonuç bekleniyor</span></div>
+          </article>
+          <article class="research-card">
+            <div class="research-card-top"><span class="research-badge live">Güncel · Kilitli</span><span>27 Eylül 2026</span></div>
+            <h3>İY/MS iki seçimli koruma</h3>
+            <p>Her maçta iki ayrı İY/MS seçimi; seçim başına 1.000 TL, maç başına toplam 2.000 TL.</p>
+            <ul class="research-picks compact">
+              <li><span>De Graafschap–Den Bosch</span><strong>1/1 + X/1</strong></li>
+              <li><span>Çin–Yeni Zelanda</span><strong>2/2 + X/2</strong></li>
+            </ul>
+            <div class="research-actions"><a class="btn btn-secondary" href="#web-publication-note" target="_blank" rel="noopener">Raporu aç</a><span>Yüksek güven filtresi</span></div>
+          </article>
+        </div>
+
+        <div class="research-section-heading">
+          <div><span class="research-kicker">DOĞRULAMA</span><h2>Geçmiş testleri</h2></div>
+          <p>Aynı yöntemlerin sonuçlanmış maçlardaki görünümü</p>
+        </div>
+        <div class="research-grid">
+          <article class="research-card">
+            <div class="research-card-top"><span class="research-badge test">Geriye dönük test</span><span>24 seçim</span></div>
+            <h3>MS / Çifte Şans dönüşümü</h3>
+            <div class="research-metrics"><div><strong>17/24</strong><span>Tuttu</span></div><div><strong>%70,8</strong><span>Başarı</span></div><div><strong>+3.110 TL</strong><span>Net</span></div></div>
+            <p class="muted">Seçim başına 1.000 TL. Keşif yapılan aynı örneklem; ileriye dönük garanti değildir.</p>
+            <div class="research-actions"><a class="btn btn-secondary" href="#web-publication-note" target="_blank" rel="noopener">Testi incele</a></div>
+          </article>
+          <article class="research-card">
+            <div class="research-card-top"><span class="research-badge test">Walk-forward</span><span>24 maç</span></div>
+            <h3>İY/MS yüksek güven filtresi</h3>
+            <div class="research-metrics"><div><strong>17/24</strong><span>Tuttu</span></div><div><strong>%70,8</strong><span>Başarı</span></div><div><strong>+20.680 TL</strong><span>Net</span></div></div>
+            <p class="muted">Maç başına iki seçim ve toplam 2.000 TL bahis üzerinden hesaplandı.</p>
+            <div class="research-actions"><a class="btn btn-secondary" href="#web-publication-note" target="_blank" rel="noopener">Testi incele</a></div>
+          </article>
+        </div>
+
+        <div class="research-section-heading research-data-heading">
+          <div><span class="research-kicker">VERİ TABANI</span><h2>Veri Özeti</h2></div>
+          <p>Toplanan maç, oran, market ve turnuva kayıtlarının güncel görünümü</p>
+        </div>
+        <div id="research-data-overview"></div>
+
+        <details class="card research-archive">
+          <summary>Arşivlenmiş araştırmaları göster</summary>
+          <p class="muted">Bunlar güncel oynama sistemi değildir; karşılaştırma ve yöntem geçmişi için saklanır.</p>
+          <div class="research-archive-links">
+            <a href="#web-publication-note" target="_blank" rel="noopener"><strong>İY/MS ve 0-0 araştırması</strong><span>25–26 Eylül geçmiş incelemesi</span></a>
+            <a href="#web-publication-note" target="_blank" rel="noopener"><strong>FS → Mackolik hibrit araştırması</strong><span>Ham hareket sinyallerinin ilk karşılaştırması</span></a>
+          </div>
+        </details>
+      </section>
+
+      <section id="tab-matches" class="tab-content" role="tabpanel">
+        <!-- Metrikler Başlığı -->
+        <div class="card metrics-card">
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="metric-title">Kayıtlı Maç</span>
+              <span class="metric-num" id="matches-metric-total">—</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-title">Snapshot / Market / Oran</span>
+              <span class="metric-num" id="matches-metric-counts">—</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-title">Veritabanı Tarih Aralığı</span>
+              <span class="metric-num metric-sm" id="matches-metric-range">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtreler -->
+        <div class="card filter-card">
+          <form id="matches-filter-form" class="filter-form">
+            <div class="filter-group">
+              <label for="filter-q">Takım veya Maç Adı</label>
+              <input type="text" id="filter-q" name="q" placeholder="Örn: Meksika, Kore, Fas..." autocomplete="off" />
+            </div>
+            <div class="filter-group">
+              <label for="filter-competition">Turnuva / Lig</label>
+              <input type="text" id="filter-competition" name="competition" placeholder="Örn: Dünya Kupası..." />
+            </div>
+            <div class="filter-group">
+              <label for="filter-from">Başlangıç Tarihi</label>
+              <input type="date" id="filter-from" name="from" />
+            </div>
+            <div class="filter-group">
+              <label for="filter-to">Bitiş Tarihi</label>
+              <input type="date" id="filter-to" name="to" />
+            </div>
+            <div class="filter-group filter-checkbox-group">
+              <label class="checkbox-label" for="filter-has-odds">
+                <input type="checkbox" id="filter-has-odds" name="has_odds" value="1" />
+                <span>Sadece Oranlı Maçlar</span>
+              </label>
+            </div>
+            <div class="filter-group">
+              <label for="filter-page-size">Kayıt / Sayfa</label>
+              <select id="filter-page-size" name="page_size">
+                <option value="25" selected>25 Kayıt</option>
+                <option value="50">50 Kayıt</option>
+                <option value="100">100 Kayıt</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-sort">Sıralama</label>
+              <select id="filter-sort" name="sort">
+                <option value="newest" selected>En Yeni Tarih</option>
+                <option value="oldest">En Eski Tarih</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button type="submit" class="btn btn-primary">Filtrele</button>
+              <button type="button" id="btn-reset-filters" class="btn btn-secondary">Temizle</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Liste ve Sayfalama -->
+        <div class="card table-card">
+          <div class="table-header-info">
+            <span id="matches-counter" class="counter-text">Yükleniyor...</span>
+            <div class="pagination-controls" id="pagination-top"></div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table matches-table">
+              <thead>
+                <tr>
+                  <th>Tarih</th>
+                  <th>Saat</th>
+                  <th>Turnuva / Lig</th>
+                  <th>Ev Sahibi</th>
+                  <th class="text-center">İY / MS</th>
+                  <th>Deplasman</th>
+                  <th>Durum</th>
+                  <th>Snapshot</th>
+                  <th>Son Oran Zamanı</th>
+                  <th class="text-right">İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="matches-tbody">
+                <tr><td colspan="10" class="text-center muted">Maçlar yükleniyor...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer-info">
+            <div class="pagination-controls" id="pagination-bottom"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEKME 3: ORAN ANALİZİ -->
+      <section id="tab-analysis" class="tab-content" role="tabpanel">
+        <div class="card" id="system-comparison-card">
+          <div class="section-heading-row">
+            <div><span class="eyebrow">SON İKİ GÜN · İLERİ KAYITLAR</span><h2>Analiz Sistemleri Karşılaştırması</h2><p class="muted">Her yöntem kendi sekmesinde ölçülür. Yalnız maçtan önce kilitlenen kayıtlar kullanılır; bekleyen, eksik ve iptal kayıtları başarıya katılmaz.</p></div>
+            <span class="selection-tag" id="system-comparison-default">Varsayılan hesaplanıyor…</span>
+          </div>
+          <div class="daily-match-filters"><label>Başlangıç <input id="system-date-from" type="date"></label><label>Bitiş <input id="system-date-to" type="date"></label><button id="system-comparison-refresh" class="btn btn-primary" type="button">Ölç</button></div>
+          <p id="system-comparison-status" class="muted" role="status">Sistem sonuçları yükleniyor…</p>
+          <p id="telegram-notification-status" class="muted" role="status">Telegram yapılandırması denetleniyor…</p>
+          <div id="system-method-tabs" class="system-method-tabs" role="tablist" aria-label="Analiz sistemleri"></div>
+          <div id="system-method-panel"></div>
+        </div>
+        <div class="card" id="daily-top3-card">
+          <div class="section-heading-row"><div><h2>Yöntemlere Göre Günün 3 Adayı</h2><p class="muted">Her yöntem ayrı sekmededir. Onaylı seçim bulunamazsa en yakın adaylar gerekçesiyle gösterilir; yalnız kapanışa yakın doğrulanan ve temkinli avantajı pozitif olan seçim “Sistem onayladı” sayılır.</p></div><span class="selection-tag">Sabit bahis: 1.000 TL</span></div>
+          <div class="daily-match-filters"><label>Tarih <input id="daily-top3-date" type="date"></label><button id="daily-top3-today" class="btn btn-secondary" type="button">Bugün</button><button id="daily-top3-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="daily-top3-status" class="muted" role="status">Sekmeyi açtığında yüklenir.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>#</th><th>Maç / Lig</th><th>Seçim</th><th>Oran / Hareket</th><th>Kanıt / Değer</th><th>Durum / Skor</th><th>Karar</th></tr></thead><tbody id="daily-top3-body"><tr><td colspan="7">Henüz yüklenmedi.</td></tr></tbody></table></div>
+        </div>
+        <div class="card" id="closing-value-card">
+          <div class="section-heading-row"><div><span class="eyebrow">KAPANIŞ · KALİBRASYON · İLERİ TEST</span><h2>Kapanış Değeri</h2><p class="muted">Mevcut adayları piyasanın başabaş ihtimali, kapanış oranı, lig ve takım bağlamı ile ileri kayıt performansını birlikte kullanarak yeniden değerlendirir. Mevcut resmî tahminleri değiştirmez.</p></div><span class="selection-tag">En fazla 3 aday</span></div>
+          <div class="daily-match-filters"><label>Tarih <input id="closing-value-date" type="date"></label><button id="closing-value-today" class="btn btn-secondary" type="button">Bugün</button><button id="closing-value-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="closing-value-status" class="muted" role="status">Sekmeyi açtığında yüklenir.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>#</th><th>Maç / Lig</th><th>Seçim / Oran</th><th>Olasılık / Değer</th><th>Bağlam / İleri Test</th><th>Karar</th></tr></thead><tbody id="closing-value-body"><tr><td colspan="6">Henüz yüklenmedi.</td></tr></tbody></table></div>
+        </div>
+        <div class="card" id="ten-league-matches-card">
+          <div class="section-heading-row"><div><h2>10 Lig · Günlük Maç Listesi</h2><p class="muted">Seçilen tarihteki 6 ana lig ve 4 UEFA turnuvasının bütün maçları. Bu liste fikstür içindir; “Günün En Güvenilir 3 Maçı” ayrı bölümde kalır.</p></div><span class="selection-tag">Tüm maçlar</span></div>
+          <div class="daily-match-filters"><label>Tarih <input id="ten-league-date" type="date"></label><button id="ten-league-today" class="btn btn-secondary" type="button">Bugün</button><button id="ten-league-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="ten-league-status" class="muted" role="status">Sekmeyi açtığında yüklenir.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>#</th><th>Maç / Lig</th><th>Başlama</th><th>Durum / Skor</th><th>Kaydedilmiş oran satırı</th><th>İşlem</th></tr></thead><tbody id="ten-league-body"><tr><td colspan="6">Henüz yüklenmedi.</td></tr></tbody></table></div>
+        </div>
+        <div class="card" id="consensus-card">
+          <div class="section-heading-row"><div><h2>Birleşik Konsensüs · İleri Takip</h2><p class="muted">Mackolik piyasa gücü, FS başlangıç favorisi ve FS oran hareketini ağırlıklı birleştirir. Sistemler çatışırsa tahmin yerine pas verir.</p></div><span class="selection-tag">Gösterilen oran: Mackolik</span></div>
+          <p class="muted">En az iki bağımsız destek ve minimum 1,40 Mackolik oranı gerekir. Başlamadan kaydedilen seçim değiştirilemez; canlı incelemeler başarı hesabına girmez. İY/MS iki seçim sisteminin ≥2,00 kuralı değişmedi.</p>
+          <div class="daily-match-filters"><label>Tarih <input id="consensus-date" type="date"></label><button id="consensus-today" class="btn btn-secondary" type="button">Bugün</button><button id="consensus-refresh" class="btn btn-primary" type="button">Yenile</button></div>
+          <p id="consensus-status" class="muted" role="status">Sekmeyi açtığında yüklenir.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Maç / Başlama</th><th>Karar</th><th>Mackolik oranı</th><th><button id="consensus-sort" class="table-sort-button" type="button" title="Konsensüse göre sırala">Konsensüs ↕</button></th><th>Sistem oyları</th><th>İY / MS · Sonuç</th><th>Kayıt türü</th></tr></thead><tbody id="consensus-body"><tr><td colspan="7">Henüz yüklenmedi.</td></tr></tbody></table></div>
+        </div>
+        <div class="card">
+          <h2>Yeni kapsam · İleriye dönük 100 maç takibi</h2>
+          <p>Yeni sabit sürüm: minimum 1,40 oran, en az 20 geçmiş maç ve %60 gerçekleşme. Yalnız yeni sürümle maç başlamadan kilitlenen resmî tahminler izlenir; eski kayıtlar değiştirilmez. Her seçim ayrı 1.000 TL simülasyonudur. İY/MS iki seçimde ≥2,00 şartı aynen korunur. 100 farklı sonuçlanmış maç ilk kontrol noktasıdır, başarı garantisi değildir.</p>
+          <label>Sürüm <select id="forward-audit-cohort"><option value="min140">Yeni v4 — kapanış doğrulamalı</option><option value="legacy">Eski v3 takip</option></select></label>
+          <div class="daily-match-filters"><label>Kapsam <select id="forward-audit-scope"><option value="all">Tüm İddaa maçları</option><option value="ten">Seçili 10 lig / turnuva</option></select></label><button id="forward-audit-refresh" class="btn btn-secondary" type="button">Sonuçları yenile</button></div>
+          <div id="forward-audit-results" role="status">Sekmeyi açtığında yüklenir.</div>
+        </div>
+        <div class="card analysis-hero" id="analysis-history-intro">
+          <div>
+            <span class="eyebrow">GEÇMİŞ SONUÇ DAVRANIŞI</span>
+            <h2>Mackolik · Benzer oranlar nasıl bitmiş?</h2>
+            <p class="muted">Tahmin ve başarı kaynağı: Mackolik. Flashscore / 1xBet ayrı tahmin sekmesindedir.</p>
+            <p class="muted">Hedef oran yok. Sistem sonucu skorla doğrulanabilen tüm İddaa marketlerini tarar; Mackolik/İddaa oranı bulunan bütün yaklaşan maçlarda en az 20 geçmiş sonuç ve %60 gerçekleşme şartını arar.</p>
+          </div>
+          <div class="analysis-scope" id="analysis-scope">Analiz kapsamı yükleniyor…</div>
+        </div>
+
+        <div class="card filter-card" id="analysis-history-filters">
+          <div class="analysis-toolbar">
+            <div class="filter-group">
+              <label for="analysis-weekday">Maç Günü</label>
+              <select id="analysis-weekday"><option value="">Tüm günleri birleştir</option></select>
+            </div>
+            <div class="filter-group">
+              <label for="analysis-market">Market</label>
+              <select id="analysis-market"><option value="">Tüm doğrulanabilir İddaa marketleri</option></select>
+            </div>
+            <div class="filter-group">
+              <label for="analysis-selection">Seçim</label>
+              <select id="analysis-selection"><option value="">Tüm seçimler</option></select>
+            </div>
+            <div class="filter-group compact-input">
+              <label for="analysis-min-sample">En Az Maç</label>
+              <input id="analysis-min-sample" type="number" min="3" max="500" value="3" />
+            </div>
+            <button type="button" id="btn-refresh-analysis" class="btn btn-primary">Analizi Yenile</button>
+          </div>
+        </div>
+
+        <div class="grid-2col analysis-metrics" id="analysis-history-metrics">
+          <div class="card metric-callout"><span>Sonucu alınmış maç</span><strong id="analysis-finished-count">—</strong><small id="analysis-result-coverage">Bütün liglerden analiz edilir</small></div>
+          <div class="card metric-callout"><span>Tahmin aday kapsamı</span><strong>Tüm İddaa maçları</strong><small id="analysis-league-list">Mackolik oranı bulunan bütün lig ve turnuvalar</small></div>
+        </div>
+
+        <div class="card table-card">
+          <div class="section-heading-row">
+            <div><h2>Tüm İddaa Maçlarında Güncel Öneriler · En az 1.40</h2><p class="muted">Gün bağımsız tekli / ikili / üçlü oran koşulları; yöntem başına en az 20 geçmiş maç ve %60 gerçekleşme gerekir. Öneri kanıtı yalnızca doğrulanmış maç öncesi kayıtlardan hesaplanır. Hareket ve kalan süre ek karşılaştırmadır. Her yöntem ayrı değerlendirilir, kupon değildir.</p></div>
+            <span class="counter-text" id="recommendation-count">—</span>
+          </div>
+          <div class="table-responsive analysis-table-wrap">
+            <table class="data-table analysis-table">
+              <thead><tr><th>Tarih / Gün</th><th>Maç / Lig</th><th>Market / Seçim ve Gerekçe</th><th>Oran</th><th>Geçmiş Örnek</th><th>Başarı</th><th>Güven Alt Sınırı</th><th>Güç / Risk</th></tr></thead>
+              <tbody id="recommendation-body"><tr><td colspan="8" class="muted text-center p-2">Öneriler hesaplanıyor…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="section-heading-row"><div><h2>Ön İzleme Adayları</h2><p class="muted">Resmî öneri eşiğini henüz karşılamayan en güçlü tekli/ikili/üçlü oran eşleşmeleri. Maç başlamadan ayrı bir gruba kaydedilir; resmî öneri sayılmaz.</p><p id="analysis-coverage" class="muted"></p></div><span id="near-miss-count" class="counter-text">—</span></div>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Maç / Lig</th><th>Yöntem ve oran koşulu</th><th>İzlenen seçim</th><th>Geçmiş</th><th>Neden resmî öneri değil?</th></tr></thead>
+            <tbody id="near-miss-body"><tr><td colspan="5">Hesaplanıyor…</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card table-card">
+          <div class="section-heading-row">
+            <div><h2>Tek Oran Analizi</h2><p class="muted">Her oran diliminin gerçek sonuç dağılımı. “Başarı”, o satırdaki seçimin gerçekleşme yüzdesidir.</p></div>
+            <span class="counter-text" id="single-analysis-count">—</span>
+          </div>
+          <div class="table-responsive analysis-table-wrap">
+            <table class="data-table analysis-table">
+              <thead><tr><th data-single-sort="weekday">Gün</th><th>Market / Seçim</th><th data-single-sort="price">Oran</th><th data-single-sort="sample">Örnek</th><th data-single-sort="ms1">MS 1</th><th data-single-sort="ms0">MS 0</th><th data-single-sort="ms2">MS 2</th><th data-single-sort="dc02">ÇŞ 0-2</th><th data-single-sort="dc12">ÇŞ 1-2</th><th data-single-sort="dc10">ÇŞ 1-0</th><th data-single-sort="selection_hit_pct" class="sortable active-sort">Seçim Başarısı ↕</th><th data-single-sort="dominant_pct">Baskın Sonuç ↕</th><th>Maçlar</th></tr></thead>
+              <tbody id="single-analysis-body"><tr><td colspan="13" class="muted text-center p-2">Analiz yükleniyor…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card" id="daily-closing-movement-card">
+          <div class="section-heading-row">
+            <div><h2>Günlük Son 15 Dakika Oran Hareketi</h2><p class="muted">Biten maçlarda son 15 dakikanın ilk ve son kayıtlı oranı; tüm seçimler, 1.000 TL sabit bahis simülasyonu.</p></div>
+            <div><label>Maç günü <input id="daily-movement-date" type="date" /></label> <button type="button" id="btn-daily-movement" class="btn btn-secondary">Raporu Getir</button></div>
+          </div>
+          <p id="daily-movement-status" class="muted">Rapor yükleniyor…</p>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Değişim aralığı</th><th>Yön</th><th>Toplam seçim</th><th>Tuttu</th><th>Tutmadı</th><th>Başarı</th><th>1.000 TL net sonuç</th></tr></thead>
+            <tbody id="daily-movement-summary"><tr><td colspan="7">Hesaplanıyor…</td></tr></tbody>
+          </table></div>
+          <details><summary id="daily-movement-detail-title">Tüm seçimleri göster</summary>
+            <div class="table-responsive analysis-table-wrap"><table class="data-table">
+              <thead><tr><th>Maç</th><th>Market / seçim</th><th>Aralık / yön</th><th>İlk → son oran</th><th>Fark</th><th>İY / MS</th><th>Sonuç</th><th>Net</th></tr></thead>
+              <tbody id="daily-movement-details"></tbody>
+            </table></div>
+          </details>
+        </div>
+
+
+        <div class="card table-card" id="reverse-movement-card">
+          <div class="section-heading-row">
+            <div><h2>Yükselen Oranın Tersini Oynama Testi</h2><p class="muted">Başlangıç oranı 1,50–2,50; yükseliş en az 0,15; yalnız ikili Alt/Üst, KG ve takım Alt/Üst marketleri. Gerçek karşı kapanış oranı en az 1,40.</p></div>
+            <div><label>Başlangıç <input id="reverse-date-from" type="date" /></label> <label>Bitiş <input id="reverse-date-to" type="date" /></label> <button type="button" id="btn-reverse-movement" class="btn btn-secondary">Testi Çalıştır</button></div>
+          </div>
+          <p id="reverse-movement-status" class="muted">Hesaplanıyor…</p>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Maç</th><th>Yükselen seçim</th><th>Karşı seçim / kapanış</th><th>İY / MS</th><th>Sonuç</th><th>1.000 TL net</th></tr></thead>
+            <tbody id="reverse-movement-rows"><tr><td colspan="6">Hesaplanıyor…</td></tr></tbody>
+          </table></div>
+          <details><summary>1,40 altı karşı oranlar dahil bütün eşleşmeler</summary><div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Maç</th><th>Yükselen</th><th>Karşı oran</th><th>Eşik</th><th>Karşı sonuç</th></tr></thead>
+            <tbody id="reverse-movement-all-rows"></tbody>
+          </table></div></details>
+        </div>
+
+        <div class="card table-card">
+          <div class="section-heading-row"><h2>Günlük Tahmin Takibi</h2><div><label>Görünüm <select id="prediction-track-filter"><option value="official" selected>Resmî tahminler</option><option value="preview">Ön izleme</option><option value="alternatives">Alternatifler</option><option value="all">Tümü</option></select></label> <label>Dönem <select id="prediction-window"><option value="7">Son 7 gün</option><option value="30" selected>Son 30 gün</option><option value="">Tüm zamanlar</option></select></label></div></div>
+          <p class="muted">Her seçim için sabit bahis 1.000 TL'dir. Resmî öneriler ile 20 örnek eşiğine ulaşmamış ön izleme adayları ayrı tutulur. Yalnızca maç başlamadan kaydedilen ilk seçimler sayılır; geçmiş günler geriye dönük doldurulmaz.</p>
+          <p id="prediction-status" class="muted">Takip yükleniyor…</p>
+          <div id="prediction-official-daily-card"></div>
+          <div id="prediction-odds-movement-audit"></div>
+          <div class="table-responsive"><table class="data-table">
+            <thead><tr><th>Maç günü</th><th>Grup</th><th>Toplam</th><th>Tuttu</th><th>Tutmadı</th><th>Bekleyen</th><th>Eksik</th><th>İptal</th><th>Tutma %</th><th>Net K/Z</th><th>ROI</th><th>Toplam yatırılan</th><th>Geri dönüş (iade dahil)</th><th>Bekleyen tutar</th></tr></thead>
+            <tbody id="prediction-days"></tbody>
+          </table></div>
+          <p class="muted">Net K/Z: kazanan seçimde 1.000 × (oran − 1), kaybedende −1.000 TL. ROI yalnız sonuçlanmış bahis tutarı üzerinden hesaplanır; bekleyen, eksik ve iptal dahil değildir.</p>
+          <h3>Tekli / İkili / Üçlü İleriye Dönük Karşılaştırma</h3>
+          <div id="prediction-common-pool"></div>
+          <h4>Tüm kayıtlar (maç havuzları farklı olabilir)</h4>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Takip</th><th>Yöntem</th><th>Toplam</th><th>Tuttu</th><th>Tutmadı</th><th>Ort. oran</th><th>Tutma %</th><th>Net K/Z</th><th>ROI</th></tr></thead><tbody id="prediction-methods"></tbody></table></div>
+          <h3>15 / 20 / 30 Geçmiş Örnek Eşiği Karşılaştırması</h3>
+          <p class="muted">Aynı ileriye dönük kayıtlar, tahmin üretildiği andaki geçmiş örnek sayısına göre karşılaştırılır. Eşik kendiliğinden değiştirilmez.</p>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Eşik</th><th>Yöntem</th><th>Toplam</th><th>Sonuçlanan</th><th>Ort. oran</th><th>Tutma %</th><th>Net K/Z</th><th>ROI</th></tr></thead><tbody id="prediction-thresholds"></tbody></table></div>
+          <p id="prediction-market-guard" class="muted"></p>
+          <details><summary>Oran hareketi ve maça kalan süre karşılaştırması</summary><div class="table-responsive"><table class="data-table"><thead><tr><th>Takip / Yöntem</th><th>Parametre</th><th>Grup</th><th>Sonuçlanan</th><th>Tutma %</th><th>Net K/Z</th><th>ROI</th></tr></thead><tbody id="prediction-contexts"></tbody></table></div></details>
+          <details><summary>Kaydedilen tahminler ve sonuçları (son 200 kayıt)</summary>
+            <div class="table-responsive analysis-table-wrap"><table class="data-table">
+              <thead><tr><th>Maç günü / Kayıt zamanı</th><th>Maç</th><th>Grup</th><th>Seçim</th><th>Oran</th><th>Bahis</th><th>Net K/Z</th><th>İY / MS</th><th>Sonuç</th></tr></thead>
+              <tbody id="prediction-details"></tbody>
+            </table></div>
+          </details>
+        </div>
+
+        <div id="single-match-detail" class="card hidden">
+          <div class="section-heading-row"><div><h2 id="single-detail-title">Bu Orandaki Maçlar</h2><p class="muted">Tarih, lig, maç ve biten skorlar</p></div><button type="button" id="btn-close-single-detail" class="btn btn-secondary">Kapat</button></div>
+          <div class="table-responsive"><table class="data-table"><tbody id="single-detail-body"></tbody></table></div>
+        </div>
+
+        <div class="card table-card">
+          <div class="section-heading-row">
+            <div><h2>Otomatik İki Oran Kalıpları</h2><p class="muted">Aynı snapshot'taki MS + diğer doğrulanabilir İddaa marketleri. Bir kalıbı seçerek geçmiş maçları ve Mackolik oranı bulunan tüm güncel adayları açabilirsin.</p></div>
+            <span class="counter-text" id="pattern-analysis-count">—</span>
+          </div>
+          <div class="table-responsive analysis-table-wrap">
+            <table class="data-table analysis-table">
+              <thead><tr><th>Gün</th><th>Oran İkilisi</th><th>Örnek</th><th>MS 1</th><th>MS 0</th><th>MS 2</th><th>ÇŞ 0-2</th><th>ÇŞ 1-2</th><th>ÇŞ 1-0</th><th>Baskın Sonuç</th><th></th></tr></thead>
+              <tbody id="pattern-analysis-body"><tr><td colspan="11" class="muted text-center p-2">Kalıplar yükleniyor…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card pattern-builder-card">
+          <div class="section-heading-row">
+            <div><h2>Kendi Oran İkilini / Üçlünü Sorgula</h2><p class="muted">Oranlar boş başlar. 2 veya 3 koşul seç; geçmiş sonuçlar tüm liglerden, güncel adaylar Mackolik/İddaa oranı bulunan bütün maçlardan gelir.</p></div>
+          </div>
+          <div id="pattern-legs" class="pattern-legs">
+            <div class="pattern-leg" data-leg="0"><span class="leg-number">1</span><select class="leg-market"><option value="">Market seç</option></select><select class="leg-selection"><option value="">Seçim seç</option></select><input class="leg-price" inputmode="decimal" placeholder="Oranı gir" /></div>
+            <div class="pattern-leg" data-leg="1"><span class="leg-number">2</span><select class="leg-market"><option value="">Market seç</option></select><select class="leg-selection"><option value="">Seçim seç</option></select><input class="leg-price" inputmode="decimal" placeholder="Oranı gir" /></div>
+            <div class="pattern-leg optional-leg" data-leg="2"><span class="leg-number">3</span><select class="leg-market"><option value="">İsteğe bağlı üçüncü market</option></select><select class="leg-selection"><option value="">Seçim seç</option></select><input class="leg-price" inputmode="decimal" placeholder="Oranı gir" /></div>
+          </div>
+          <div class="pattern-actions">
+            <label>Yakınlık <select id="pattern-tolerance"><option value="0.01">±0,01</option><option value="0.025" selected>±0,025</option><option value="0.05">±0,05</option><option value="0.10">±0,10</option></select></label>
+            <button type="button" id="btn-run-pattern" class="btn btn-primary">Geçmişi ve Adayları Bul</button>
+          </div>
+          <div id="pattern-query-error"></div>
+        </div>
+
+        <div id="pattern-results" class="analysis-results-grid hidden">
+          <div class="card"><h2>Geçmişte Nasıl Bitmiş?</h2><div id="pattern-summary"></div><div class="table-responsive"><table class="data-table"><tbody id="pattern-matches-body"></tbody></table></div></div>
+          <div class="card candidate-card"><h2>Tüm İddaa Maçlarında Güncel Adaylar</h2><p class="muted">Bu bölüm Mackolik/İddaa oranı bulunan ve aynı oran koşullarına uyan oynanmamış maçları gösterir.</p><div id="pattern-candidates"></div></div>
+        </div>
+      </section>
+
+      <!-- SEKME 4: VERİ TOPLAMA DURUMU (ROLLING COLLECTOR & BACKFILL) -->
+      <section id="tab-backfill" class="tab-content" role="tabpanel">
+        <div class="card">
+          <div class="backfill-header">
+            <div>
+              <h2>Sürekli Oran ve Maç Sonucu Toplama Servisi (Rolling Collector)</h2>
+              <p class="muted">Tüm liglerdeki oynanabilir İddaa oranlarını 8 günlük pencerede izler; canlı ve biten maç skorlarını 15 saniye hedef aralıkla kontrol eder. Sağlayıcı beklemeleri ve devam eden işler süreyi uzatabilir.</p>
+            </div>
+            <div class="backfill-actions">
+              <button type="button" id="btn-refresh-rolling" class="btn btn-primary">
+                🔄 Durumu Yenile
+              </button>
+            </div>
+          </div>
+
+          <!-- Rolling Worker Üst Göstergeler -->
+          <div class="backfill-grid">
+            <div class="bf-stat-card">
+              <span class="bf-label">Genel Servis Durumu</span>
+              <div id="rc-status-pill" class="pill pill-lg">—</div>
+            </div>
+            <div class="bf-stat-card">
+              <span class="bf-label">Son Heartbeat & Geçen Süre</span>
+              <span class="bf-value" id="rc-heartbeat-time">—</span>
+              <span class="bf-sub" id="rc-heartbeat-age">—</span>
+            </div>
+            <div class="bf-stat-card">
+              <span class="bf-label">İşlemci PID & Kilit</span>
+              <span class="bf-value" id="rc-pid">—</span>
+              <span class="bf-sub" id="rc-pid-sub">—</span>
+            </div>
+            <div class="bf-stat-card">
+              <span class="bf-label">Rate Modu & İstek Gecikmesi</span>
+              <span class="bf-value" id="rc-rate-mode">—</span>
+              <span class="bf-sub" id="rc-rate-delay">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Sütunlu Ayrı Kartlar: Oran Toplama & Sonuç Toplama -->
+        <div class="grid-2col mt-1">
+          <!-- KART 1: ORAN TOPLAMA -->
+          <div class="card">
+            <div class="section-heading-row">
+              <div>
+                <h2>⚽ Oran Toplama (Rolling Odds Window - 8 Gün)</h2>
+                <p class="muted">Bugün dahil 8 günlük takvim penceresinde tüm liglerin oranları taranır.</p>
+              </div>
+              <div id="rc-odds-status-pill" class="pill">—</div>
+            </div>
+            <table class="data-table mt-1">
+              <tbody>
+                <tr><th>8 Günlük Tarih Penceresi</th><td><strong id="rc-odds-window">—</strong></td></tr>
+                <tr><th>Takip Edilen Maç Sayısı</th><td><span id="rc-odds-matches-count">—</span> maç</td></tr>
+                <tr><th>Son Kontrol / Deneme</th><td><span id="rc-odds-last-attempt">—</span></td></tr>
+                <tr><th>Son Başarılı İşlem</th><td><span id="rc-odds-last-success">—</span></td></tr>
+                <tr><th>Son Gerçek Oran Değişimi</th><td><span id="rc-odds-last-update">—</span> <small class="muted">(Değişmeyen kontroller snapshot oluşturmaz)</small></td></tr>
+                <tr><th>Sıradaki Planlanan Kontrol</th><td><span id="rc-odds-next-scheduled">—</span></td></tr>
+                <tr><th>Oran Sayaçları</th><td>
+                  <span class="pill ok" id="rc-odds-changed-count">Değişen: 0</span>
+                  <span class="pill" id="rc-odds-unchanged-count">Aynı: 0</span>
+                  <span class="pill" id="rc-odds-empty-count">Boş: 0</span>
+                </td></tr>
+              </tbody>
+            </table>
+            <div id="rc-odds-alert" class="alert-box alert-warn mt-1" style="display: none;">
+              <strong>Oran Servisi Uyarısı:</strong> <span id="rc-odds-error-text"></span>
+            </div>
+          </div>
+
+          <!-- KART 2: MAÇ SONUÇLARI VE TAHMİN UZLAŞMASI -->
+          <div class="card">
+            <div class="section-heading-row">
+              <div>
+                <h2>🏆 Maç Sonuçları ve Tahmin Uzlaşması</h2>
+                <p class="muted">Canlı ve yeni biten maçlar ~2 dk aralıkla taranır, tahminler otomatik uzlaşır.</p>
+              </div>
+              <div id="rc-results-status-pill" class="pill">—</div>
+            </div>
+            <table class="data-table mt-1">
+              <tbody>
+                <tr><th>Canlı / Yakın Tarama Tarihleri</th><td><strong id="rc-results-live-dates">—</strong> <small class="muted">(15 sn hedef aralık)</small></td></tr>
+                <tr><th>Bekleyen Güncel Sonuç Sayısı</th><td><strong id="rc-results-outstanding-count" class="pill warn">—</strong> <small class="muted">(Bugün/Dün)</small></td></tr>
+                <tr><th>Tarihsel Sonuç Backlog'u</th><td><strong id="rc-results-backlog-count" class="pill">—</strong> <small class="muted">(15 dk aralıklarla canlı akışı aksatmadan eritilir)</small></td></tr>
+                <tr><th>Son Sonuç Taraması</th><td><span id="rc-results-last-attempt">—</span></td></tr>
+                <tr><th>Son Başarılı Skor Güncellemesi</th><td><span id="rc-results-last-update">—</span></td></tr>
+                <tr><th>Sıradaki Sonuç Taraması</th><td><span id="rc-results-next-scheduled">—</span></td></tr>
+                <tr><th>Tahmin Uzlaşma Durumu</th><td><span class="pill ok">Idempotent (Mükerrerlik Korumalı)</span></td></tr>
+              </tbody>
+            </table>
+            <div id="rc-results-alert" class="alert-box alert-warn mt-1" style="display: none;">
+              <strong>Sonuç Servisi Uyarısı:</strong> <span id="rc-results-error-text"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kurtarma, Supervisor ve Otomasyon Özeti -->
+        <div class="grid-2col mt-1">
+          <div class="card inner-card">
+            <h3>🛡️ Windows Otomasyonu & Otomatik İyileştirme (Supervisor)</h3>
+            <table class="data-table">
+              <tbody>
+                <tr><th>Windows Görev Zamanlayıcısı</th><td><code>OddsAnalyzer Rolling Collector</code> (AtLogon + Her 5 dk)</td></tr>
+                <tr><th>Otomatik Günlük Yedekleme</th><td><code>\OddsAnalyzer\DailyBackup</code> (Her gün saat 20:00'de otomatik)</td></tr>
+                <tr><th>Otomatik İyileştirme (Watchdog)</th><td>Tıkanma / donma algılandığında bounded restart (Max 5/saat)</td></tr>
+                <tr><th>Son Otomatik İyileştirme</th><td><span id="rc-supervisor-last-restart">Kayıt yok</span></td></tr>
+                <tr><th>Son 1 Saatteki Yeniden Başlatma</th><td><span id="rc-supervisor-restarts-count">0</span> / 5</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card inner-card">
+            <h3>Son HTTP & Sağlayıcı Durumu</h3>
+            <table class="data-table">
+              <tbody>
+                <tr><th>Son HTTP Yanıtı</th><td><span id="rc-http-status" class="pill ok">—</span></td></tr>
+                <tr><th>Art Arda Hata Sayısı</th><td><span id="rc-consecutive-failures">0</span></td></tr>
+                <tr><th>Sağlayıcı Bekleme Nedeni</th><td><span id="rc-retry-reason">—</span></td></tr>
+                <tr><th>Veri Tabanı Koruması</th><td>SQLite WAL + 20 sn busy timeout (Salt Okunur Panel)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card inner-card mt-1">
+          <h3>Sürekli Toplayıcı Logu (collector.log - Son Satırlar)</h3>
+          <pre id="rc-log-tail" class="code-log-box">Log okunuyor...</pre>
+        </div>
+
+        <!-- Arşivlenmiş Sabit Tarihli Backfill Bölümü -->
+        <details class="mt-2">
+          <summary>📁 Arşivlenmiş Sabit Tarihli Backfill Bilgileri (P8 Dünya Kupası Arşivi)</summary>
+          <div class="card backfill-status-card mt-1">
+            <div class="backfill-header">
+              <div>
+                <h2>Eski Sabit Tarihli Backfill Durumu</h2>
+                <p class="muted">2026 Dünya Kupası ve kıtasal elemeler sabit tarihli arşiv işi raporu.</p>
+              </div>
+              <div class="backfill-actions">
+                <button type="button" id="btn-refresh-backfill" class="btn btn-secondary">
+                  🔄 Arşiv Durumunu Yenile
+                </button>
+              </div>
+            </div>
+            <div class="backfill-grid">
+              <div class="bf-stat-card"><span class="bf-label">Worker Durumu</span><div id="bf-status-pill" class="pill pill-lg">—</div></div>
+              <div class="bf-stat-card"><span class="bf-label">Son Heartbeat</span><span class="bf-value" id="bf-heartbeat-time">—</span><span class="bf-sub" id="bf-heartbeat-age">—</span></div>
+              <div class="bf-stat-card"><span class="bf-label">Kuyruk İlerlemesi</span><span class="bf-value" id="bf-queue-progress">—</span><div class="progress-bar-container"><div id="bf-progress-bar" class="progress-bar-fill" style="width: 0%"></div></div><span class="bf-sub" id="bf-queue-sub">—</span></div>
+              <div class="bf-stat-card"><span class="bf-label">Veritabanındaki Maç</span><span class="bf-value" id="bf-db-matches">—</span></div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- SEKME 5: VERİ SAĞLIĞI (DATA HEALTH) -->
+      <section id="tab-health" class="tab-content" role="tabpanel">
+        <div class="card">
+          <div class="backfill-header"><div><h2>İY / MS Skor Tamamlama</h2><p class="muted">Tüm kayıtlı maçlar · Mackolik birincil, Flashscore doğrulanmış yedek kaynak. Tahminler ve oranlar değiştirilmez.</p></div><button id="score-health-refresh" type="button" class="btn btn-secondary">Yenile</button></div>
+          <div id="score-health-box">Skor doluluk bilgisi yükleniyor…</div>
+        </div>
+        <div class="card">
+          <h2>Veri Tabanı & Sistem Sağlık Durumu</h2>
+          <div id="health-overview-box">Yükleniyor...</div>
+        </div>
+
+        <div class="card">
+          <div class="backfill-header"><div><h2>Nesine Kapsam Durumu</h2><p class="muted">Nesine oynanabilir maç listesidir. Mackolik ve Flashscore yalnız eşleşen maçların yeni oranlarını saklar; eski kayıtlar silinmez.</p></div><button id="collection-scope-refresh" type="button" class="btn btn-secondary">Yenile</button></div>
+          <div id="collection-scope-box">Nesine kapsamı yükleniyor…</div>
+        </div>
+
+        <div class="card">
+          <div class="backfill-header"><div><h2>Üç Kaynak & Kapanış Oranı Kalitesi</h2><p class="muted">Mackolik, Flashscore ve Nesine tazeliği; T-60/T-15/T-5 kayıt kapsamı; panel gözetimi. Analiz ve seçim kuralları değiştirilmez.</p></div><button id="infrastructure-refresh" type="button" class="btn btn-secondary">Yenile</button></div>
+          <div id="infrastructure-status-box">Altyapı raporu yükleniyor…</div>
+        </div>
+
+        <div class="card">
+          <div class="backfill-header"><div><h2>Mackolik · Flashscore · Nesine Maç Karşılaştırması</h2><p class="muted">Aynı maçın gerçek maç önü MS 1-X-2 açılış/kapanış oranları, kayıt zamanı ve skorları yan yana gösterilir. Tahmin üretmez.</p></div><div class="backfill-actions"><label>Tarih <input id="source-comparison-date" type="date"></label><button id="source-comparison-refresh" type="button" class="btn btn-secondary">Karşılaştır</button></div></div>
+          <div id="source-comparison-status" class="muted">Henüz yüklenmedi.</div>
+          <div class="table-responsive"><table class="data-table"><thead><tr><th>Maç / Saat</th><th>Mackolik</th><th>Flashscore</th><th>Nesine</th><th>Kontrol</th></tr></thead><tbody id="source-comparison-body"><tr><td colspan="5">Henüz yüklenmedi.</td></tr></tbody></table></div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h2>Veri Kalite Göstergeleri (Anomali & Tekrar Kontrolü)</h2>
+            <div id="health-quality-box">Yükleniyor...</div>
+          </div>
+          <div class="card">
+            <h2>Whitelist Doğrulama İstatistikleri</h2>
+            <div id="health-whitelist-box">Yükleniyor...</div>
+          </div>
+        </div>
+
+        <div class="card mt-1">
+          <div class="backfill-header">
+            <div>
+              <h2>💾 Otomatik Veritabanı Yedekleme Durumu</h2>
+              <p class="muted">SQLite Online Backup API ile güvenli günlük yedekleme ve kurtarma durumu (7 set saklama).</p>
+            </div>
+            <div class="backfill-actions">
+              <button type="button" id="btn-refresh-backup" class="btn btn-secondary">🔄 Yenile</button>
+            </div>
+          </div>
+          <div id="backup-status-box">Yükleniyor...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- MAÇ ORAN DETAYI MODALI / ÇEKMECESİ -->
+    <div id="odds-modal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-container" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div>
+            <span class="modal-pre-title" id="modal-tournament">Turnuva</span>
+            <h2 id="modal-match-title">Maç Oran Detayları</h2>
+            <span class="modal-subtitle" id="modal-match-meta">Tarih & Saat</span>
+          </div>
+          <button type="button" id="btn-close-modal" class="btn-close" aria-label="Kapat">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- 1. MAÇ SONUCU BÖLÜMÜ -->
+          <div id="modal-result-section" class="modal-result-section"></div>
+
+          <div class="modal-stats-bar">
+            <div class="modal-stat-item">
+              <span class="lbl">Snapshot Sayısı</span>
+              <span class="val" id="modal-stat-snaps">—</span>
+            </div>
+            <div class="modal-stat-item">
+              <span class="lbl">Market Sayısı</span>
+              <span class="val" id="modal-stat-markets">—</span>
+            </div>
+            <div class="modal-stat-item">
+              <span class="lbl">Toplam Gözlem</span>
+              <span class="val" id="modal-stat-obs">—</span>
+            </div>
+            <div class="modal-stat-item">
+              <span class="lbl">Sağlayıcı</span>
+              <span class="val" id="modal-stat-provider">—</span>
+            </div>
+          </div>
+
+          <!-- 2. ORAN HAREKETLERİ BAŞLIĞI VE BİLGİLENDİRME BANNERI -->
+          <div class="modal-section-header">
+            <h3>🎯 Oran Hareketleri ve Piyasa Oranları</h3>
+          </div>
+          <div id="modal-movement-banner"></div>
+          <div id="modal-insights" class="alert-box alert-info" role="status"></div>
+
+          <div class="modal-filter-bar">
+            <input type="text" id="modal-market-search" placeholder="Marketlerde ara (Örn: Maç Sonucu, Alt/Üst)..." />
+          </div>
+
+          <div id="modal-markets-container" class="markets-accordion">
+            <div class="muted text-center p-2">Oran bilgileri yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./static/analysis-tabs.js?v=20261011-2"></script>
+  <script src="./static/app.js"></script>
+  <script src="./static/kickoff-lab.js"></script>
+  <script src="./static/flashscore-predictions.js"></script>
+  <script src="./static/daily-match-cards.js"></script>
+  <script src="./static/forward-audit.js"></script>
+  <script src="./static/htft-pairs.js"></script>
+  <script src="./static/consensus.js"></script>
+  <script src="./static/daily-top3.js"></script>
+  <script src="./static/closing-value.js?v=20261011-4"></script>
+  <script src="./static/ten-league-matches.js"></script>
+  <script src="./static/system-comparison.js"></script>
+  <script src="./static/table-sort.js"></script>
+</body>
+</html>
