@@ -39,7 +39,7 @@ async function getJSON(url) {
 }
 
 // ------------------------------------------------------------------ Navigation
-const tabs = ["tab-matches", "tab-analysis", "tab-research", "tab-backfill", "tab-health", "tab-live", "tab-kickoff", "tab-flashscore", "tab-htft-pairs"];
+const tabs = ["tab-weekly", "tab-matches", "tab-analysis", "tab-research", "tab-backfill", "tab-health", "tab-live", "tab-kickoff", "tab-flashscore", "tab-htft-pairs"];
 let currentTab = "tab-analysis";
 let backfillInterval = null;
 let liveInterval = null;
