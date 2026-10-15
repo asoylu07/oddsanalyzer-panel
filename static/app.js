@@ -100,7 +100,7 @@ function renderLiveMatches() {
     // selecting "Canlı" can hide every live match when no official pick exists.
     const matchesStatus = status === 'no-prediction' ? !hasPrediction :
       status === 'live' ? r.status === 'live' :
-      status ? r.bucket === status : hasPrediction;
+      status ? r.bucket === status : true;
     return matchesStatus && `${r.match_name} ${r.competition_name}`.toLocaleLowerCase('tr-TR').includes(query);
   });
   const sourceLabel = {'main':'Eski ana yöntem', 'alternatives':'Eski alternatif', 'main-v3-1li':'V3 tekli', 'main-v3-2li':'V3 ikili', 'main-v3-3li':'V3 üçlü', 'alternatives-v3':'V3 alternatif'};
@@ -116,7 +116,7 @@ function renderLiveMatches() {
   </tr>`;
   const active = rows.filter(r => r.bucket !== 'delayed' && (finished || r.bucket !== 'finished'));
   const delayed = rows.filter(r => r.bucket === 'delayed');
-  document.getElementById('live-body').innerHTML = active.length ? active.map(render).join('') : '<tr><td colspan="8">Seçili filtrelere uygun maç yok. Tahmin kaydı olmayan maçlar için “Tahmin üretilmeyenler” seçeneğini kullanabilirsin.</td></tr>';
+  document.getElementById('live-body').innerHTML = active.length ? active.map(render).join('') : '<tr><td colspan="8">Seçili tarih ve filtrelere uygun maç yok.</td></tr>';
   document.getElementById('live-delayed-body').innerHTML = delayed.map((r,i) => render(r, active.length+i)).join('');
   document.getElementById('live-delayed-title').textContent = `Güncelliği doğrulanamayan kayıtlar (${delayed.length})`;
   const c = liveData.counts;
@@ -140,14 +140,17 @@ function renderLiveMatches() {
   stats.textContent=`Listelenen maçların resmî tahminleri | Tutan oran: ${s.won} · Tutmayan oran: ${s.lost} · Sonuç bekleyen: ${s.pending} · Tutma oranı: ${s.rate === null ? '—' : '%'+s.rate.toLocaleString('tr-TR',{maximumFractionDigits:1})} · Her tahmine 1.000 TL ile net kâr/zarar: ${s.net>0?'+':''}${s.net.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} TL${s.unpriced ? ' · Oranı eksik '+s.unpriced+' sonuç kâr/zarara dahil değil' : ''}. Ön izleme ve alternatif arşivleri dahil değildir.`;
 }
 function renderPredictionGroups(row) {
-  if (!row.predictions.length) return 'Maç öncesinde kaydedilmiş tahmin yok';
+  const a=row.live_analysis;
+  const candidate=a?.candidate;
+  const assessmentHTML=a ? `<div class="live-analysis"><strong>${escapeHTML(a.label)}</strong>${candidate ? `<p>${escapeHTML(candidate.market)} · ${escapeHTML(candidate.selection)} · ${escapeHTML(candidate.price)}<br><small>Örnek: ${escapeHTML(candidate.sample)} · Geçmiş gerçekleşme: ${escapeHTML(candidate.hit_pct)}%</small></p>` : ''}<small>${escapeHTML(a.scope || '')}</small>${(a.reasons || []).map(reason=>`<p class="muted">${escapeHTML(reason)}</p>`).join('')}${a.progress ? `<p>Güncel skor değerlendirmesi: ${escapeHTML(a.progress.outcome)}</p>` : ''}${a.evaluated_at ? `<small>Hesap: ${escapeHTML(liveTime(a.evaluated_at))}</small>` : ''}</div>` : '';
+  if (!row.predictions.length) return assessmentHTML || 'Sistem onaylamadı · Maç öncesinde kaydedilmiş tahmin yok';
   const groups=row.prediction_groups || {official:row.predictions,preview:[],alternatives:[]};
   const state=row.prediction_consistency?.state;
   const warning=state==='conflict' ? '<p class="alert-box alert-warn"><strong>Geçmiş tahminler çelişiyor.</strong> Hepsi aynı skorla tutamaz; birlikte öneri değildir. Eski kayıtlar ve sonuçları korunmuştur.</p>' : state==='unverified' ? '<p class="alert-box alert-warn">Ortak skor uyumu doğrulanamadı; birlikte önerilmez.</p>' : '';
   const labels={'main':'Eski ana yöntem','main-v3-1li':'Resmî tekli','main-v3-2li':'Resmî ikili','main-v3-3li':'Resmî üçlü',
     'preview-v3-1li':'Ön izleme tekli','preview-v3-2li':'Ön izleme ikili','preview-v3-3li':'Ön izleme üçlü'};
   const render=p=>`<p><strong>${escapeHTML(p.market)} · ${escapeHTML(p.selection)} · ${escapeHTML(p.price)}</strong><br>${escapeHTML(labels[p.source] || p.source)} · ${escapeHTML(p.outcome)}<br><small>Kayıt: ${escapeHTML(liveTime(p.created_at))}</small></p>`;
-  return warning+`<strong>Mackolik · Resmî kayıtlar</strong>${groups.official.length ? groups.official.map(render).join('') : '<p>Resmî kayıt yok.</p>'}`+
+  return assessmentHTML+warning+`<strong>Mackolik · Resmî kayıtlar</strong>${groups.official.length ? groups.official.map(render).join('') : '<p>Resmî kayıt yok.</p>'}`+
     (groups.preview.length ? `<details class="prediction-preview"><summary>Ön izleme arşivi (${groups.preview.length}) · Resmî öneri değil</summary>${groups.preview.map(render).join('')}</details>` : '')+
     (groups.alternatives.length ? `<details><summary>Alternatif yöntem arşivi (${groups.alternatives.length})</summary>${groups.alternatives.map(render).join('')}</details>` : '');
 }

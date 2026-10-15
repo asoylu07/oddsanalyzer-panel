@@ -113,7 +113,7 @@
       <section id="tab-live" class="tab-content" role="tabpanel">
         <div class="card">
           <h2>Canlı Maçlar ve Günlük Sonuçlar</h2>
-          <p class="muted">Tahmin kaydı bulunan maçlar gösterilir; resmî, ön izleme ve alternatif kayıtlar dahildir. Hiç tahmin kaydı olmayan maçlar yalnız “Tahmin üretilmeyenler” seçeneğinde görünür. Numaralar filtrelenen listede 1’den başlar. Eksik skorlar — olarak gösterilir.</p>
+          <p class="muted">Tüm kayıtlı maçlar gösterilir. Canlı değerlendirme, kayıtlı maç önü tahminlerinden ayrı gösterilir; şartlar sağlanmıyorsa sistem onaylamaz. Maç başladıktan sonraki hesaplar maç önü başarı istatistiklerine eklenmez. Eksik skorlar — olarak gösterilir.</p>
           <p class="muted">Yeni tahminler ortak bir İY/MS skoruyla uyumlu olmak zorundadır. Eski çelişkili kayıtlar uyarıyla korunur; ön izlemeler resmî önerilerden ayrı gösterilir.</p>
           <p class="muted"><strong>Tahminlerin oran kaynağı: Mackolik.</strong> Flashscore tahminleri ayrı sekmede ve ayrı başarı hesabında tutulur. Skorların Flashscore ile tamamlanması, bu tahminlerin oran kaynağını değiştirmez.</p>
           <p class="muted">Kayıtlı maçların son alınan skorları. Raporlar hazırlandıkça web verileri otomatik aktarılır. Skorların kayıt ve aktarım zamanını kontrol edin. Devam eden işlemler ve sağlayıcı beklemeleri süreyi uzatabilir. Bu ekran canlı bahis oranı sunmaz.</p>
@@ -121,7 +121,7 @@
             <label><input type="checkbox" id="live-playable" /> Yalnızca 10 lig/turnuva</label>
             <label>Tarih <input type="date" id="live-date" /></label>
             <button id="live-today" class="btn btn-secondary" type="button">Bugün</button>
-            <label>Durum <select id="live-status"><option value="">Tahminli maçlar · Tüm durumlar</option><option value="live">Canlı</option><option value="finished">Biten</option><option value="scheduled">Başlamayan</option><option value="other">İptal / ertelenen</option><option value="no-prediction">Tahmin üretilmeyenler</option></select></label>
+            <label>Durum <select id="live-status"><option value="">Tüm maçlar · Tüm durumlar</option><option value="live">Canlı</option><option value="finished">Biten</option><option value="scheduled">Başlamayan</option><option value="other">İptal / ertelenen</option><option value="no-prediction">Maç önü tahmini kaydedilmemiş</option></select></label>
             <label><input type="checkbox" id="live-finished" checked /> Bitenleri göster</label>
             <input id="live-search" type="search" placeholder="Takım veya lig ara" aria-label="Canlı maçlarda ara" />
             <button id="live-refresh" class="btn btn-primary" type="button">Yenile</button>
