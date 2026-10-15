@@ -219,7 +219,7 @@ function switchTab(tabId, analysisKey) {
     sec.classList.toggle("active", sec.id === tabId || sec.id === parentTab);
   });
 
-  const hash = tabId.replace("tab-", "");
+  const hash = parentTab === "tab-analysis" && analysisKey === "ahmet" ? "ahmet" : tabId.replace("tab-", "");
   if (window.location.hash.replace("#", "") !== hash) {
     history.replaceState(null, "", `#${hash}`);
   }
@@ -1932,6 +1932,7 @@ function initApp() {
   else if (hash === "htft-pairs") switchTab("tab-htft-pairs");
   else if (hash === "consensus") switchTab("tab-analysis", "consensus");
   else if (hash === "top3") switchTab("tab-analysis", "top3");
+  else if (hash === "ahmet") switchTab("tab-analysis", "ahmet");
   else if (hash === "research") switchTab("tab-research");
   else if (hash === "overview") switchTab("tab-research");
   else if (hash === "analysis") switchTab("tab-analysis");
