@@ -39,6 +39,19 @@
     </details>`;
   }
 
+  function outcomeBadge(row) {
+    const outcomes = {
+      won: ['ok', 'Tuttu'], lost: ['bad', 'Tutmadı'],
+      pending: ['warn', 'Bekliyor'], missing: ['warn', 'Skor eksik'],
+      void: ['unknown', 'İptal / iade'],
+    };
+    let [kind, label] = outcomes[row.outcome] || ['unknown', 'Sonuç bekleniyor'];
+    if (row.outcome === 'void' && String(row.settled_phase || '').startsWith('Çakışma:')) {
+      label = 'Değerlendirme dışı';
+    }
+    return `<span class="pill ${kind}">${label}</span>`;
+  }
+
   function renderRow(row, index) {
     const movement = row.movement || 'Hareket ölçülmedi';
     const phase = row.phase === 'live' ? `Canlı${row.match_minute == null ? '' : ' · ' + esc(row.match_minute) + "'"}` :
@@ -50,6 +63,7 @@
       <td><strong>${esc(row.market)} · ${esc(row.selection)}</strong><br><span class="price-current">${Number(row.price || 0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><br><small>${esc(movement)}${row.absolute_change == null ? '' : ' · ' + (Number(row.absolute_change) > 0 ? '+' : '') + Number(row.absolute_change).toLocaleString('tr-TR')}</small></td>
       <td>Kalibre: <strong>${pct(row.calibrated_probability_pct)}</strong><br><small>Başabaş ${pct(row.breakeven_pct)} · avantaj ${pct(row.calibrated_edge_pct)}</small><br><small>Alt sınır ${pct(row.confidence)} · temkinli avantaj ${pct(row.conservative_edge_pct)}</small></td>
       <td>${esc(row.sample)} maç · ${pct(row.hit_pct)}<br><small>Güven puanı ${pct(row.trust_score)} · Değer puanı ${pct(row.value_score)}</small><br><small>${esc(metric('Aynı lig', row.context_evidence?.same_league))}</small></td>
+      <td>${outcomeBadge(row)}</td>
       <td><span class="pill ${statusClass}">${esc(row.value_label)}</span>${details(row)}</td>
     </tr>`;
   }
@@ -64,13 +78,13 @@
     try {
       const data = await getReport(day);
       if (date.value !== day) return;
-      body.innerHTML = data.rows.length ? data.rows.map(renderRow).join('') : '<tr><td colspan="6">Bu tarihte değerlendirilebilecek aday bulunamadı.</td></tr>';
+      body.innerHTML = data.rows.length ? data.rows.map(renderRow).join('') : '<tr><td colspan="7">Bu tarihte değerlendirilebilecek aday bulunamadı.</td></tr>';
       const s = data.summary;
       const coverage = s.coverage_rate_pct == null ? '—' : pct(s.coverage_rate_pct);
       status.textContent = `${data.date} · ${s.evaluated ?? s.shown} maç adayı incelendi · en iyi ${s.shown} gösteriliyor · ${s.approved_total ?? s.approved} onaylı · ${s.cautious_total ?? s.cautious ?? 0} temkinli · kapsama ${coverage}`;
     } catch (error) {
       status.textContent = 'Kapanış değeri yüklenemedi: ' + error.message;
-      body.innerHTML = '<tr><td colspan="6">Rapor alınamadı.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7">Rapor alınamadı.</td></tr>';
     } finally {
       busy = false;
       if (date.value !== day) load();
