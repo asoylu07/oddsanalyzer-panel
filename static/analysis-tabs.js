@@ -11,6 +11,7 @@ function initAnalysisSubtabs() {
     researchOverview.append(overview);
   }
   const definitions = [
+    ['ahmet', 'Ahmetin analizleri', '#ahmet-analyses-card', 'Tahminler'],
     ['systems', 'Son 2 Gün · Tüm Sistemler', '#system-comparison-card', 'Karşılaştırma'],
     ['top3', 'Günün En Güvenilir 3 Maçı', '#daily-top3-card', 'Tahminler'],
     ['closing-value', 'Kapanış Değeri', '#closing-value-card', 'Tahminler'],
