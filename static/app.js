@@ -1919,7 +1919,8 @@ function initApp() {
   refreshRollingStatus();
   setInterval(refreshRollingStatus, 30000);
   const hash = window.location.hash.replace("#", "");
-  if (hash === "matches") switchTab("tab-matches");
+  if (hash === "weekly") switchTab("tab-weekly");
+  else if (hash === "matches") switchTab("tab-matches");
   else if (hash === "live") switchTab("tab-live");
   else if (hash === "kickoff") switchTab("tab-kickoff");
   else if (hash === "flashscore") switchTab("tab-flashscore");
