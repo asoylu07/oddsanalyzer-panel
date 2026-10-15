@@ -8,12 +8,24 @@
   const odds = value => value == null ? '—' : Number(value).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   let busy = false;
 
+  function outcomeBadge(prediction) {
+    const outcomes = {
+      Tuttu: ['ok', 'Tuttu'], won: ['ok', 'Tuttu'],
+      Tutmadı: ['bad', 'Tutmadı'], lost: ['bad', 'Tutmadı'],
+      pending: ['warn', 'Bekliyor'], 'Sonuç bekleniyor': ['warn', 'Bekliyor'],
+      missing: ['warn', 'Skor eksik'], void: ['unknown', 'İptal / iade'],
+      'Çelişki nedeniyle kaldırıldı': ['unknown', 'Değerlendirme dışı'],
+    };
+    const [kind, label] = outcomes[prediction.outcome] || ['unknown', 'Sonuç bekleniyor'];
+    return `<span class="pill ${kind}">${label}</span>`;
+  }
+
   function predictionLine(prediction) {
     const source = String(prediction.source || '');
     const label = source.startsWith('main-v4-') ? 'V4 onaylı' :
       source.startsWith('preview-v4-') ? 'V4 ön izleme' :
       source.startsWith('main-v3-') ? 'Eski sistem' : 'Kayıt';
-    return `<div class="ten-league-odds-line"><strong>${esc(prediction.market)} · ${esc(prediction.selection)} · ${odds(prediction.price)}</strong><br><small>${esc(label)} · ${esc(prediction.method)}</small></div>`;
+    return `<div class="ten-league-odds-line"><strong>${esc(prediction.market)} · ${esc(prediction.selection)} · ${odds(prediction.price)}</strong> ${outcomeBadge(prediction)}<br><small>${esc(label)} · ${esc(prediction.method)}</small></div>`;
   }
 
   function render(data) {
