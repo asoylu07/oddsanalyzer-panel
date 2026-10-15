@@ -46,7 +46,7 @@
     const statusClass = row.value_status === 'approved' ? 'ok' : ['cautious', 'provisional'].includes(row.value_status) ? 'warn' : 'bad';
     return `<tr>
       <td><strong>${index + 1}</strong></td>
-      <td><strong>${esc(row.match_name)}</strong><br><small>${esc(row.league)} · ${esc(liveTime(row.kickoff_at_utc))}</small><br><small>${phase}${row.display_score ? ' · ' + esc(row.display_score) : ''}</small></td>
+      <td><strong>${esc(row.match_name)}</strong><br><small>${esc(row.league)} · ${esc(liveTime(row.kickoff_at_utc))}</small><br><small>${phase}<br>${MatchScores.html(row.ht_score,row.display_score,row.phase)}</small></td>
       <td><strong>${esc(row.market)} · ${esc(row.selection)}</strong><br><span class="price-current">${Number(row.price || 0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><br><small>${esc(movement)}${row.absolute_change == null ? '' : ' · ' + (Number(row.absolute_change) > 0 ? '+' : '') + Number(row.absolute_change).toLocaleString('tr-TR')}</small></td>
       <td>Kalibre: <strong>${pct(row.calibrated_probability_pct)}</strong><br><small>Başabaş ${pct(row.breakeven_pct)} · avantaj ${pct(row.calibrated_edge_pct)}</small><br><small>Alt sınır ${pct(row.confidence)} · temkinli avantaj ${pct(row.conservative_edge_pct)}</small></td>
       <td>${esc(row.sample)} maç · ${pct(row.hit_pct)}<br><small>Güven puanı ${pct(row.trust_score)} · Değer puanı ${pct(row.value_score)}</small><br><small>${esc(metric('Aynı lig', row.context_evidence?.same_league))}</small></td>

@@ -63,12 +63,12 @@
   function phaseText(row) {
     if (row.phase === 'live') {
       const minute = row.match_minute == null ? 'Canlı' : `${row.minute_estimated ? '≈' : ''}${row.match_minute}'`;
-      return `${minute} · Canlı skor: ${esc(row.display_score)}`;
+      return `${minute}<br>${MatchScores.html(row.ht_score,row.display_score,'live')}`;
     }
     if (row.phase === 'finished') {
-      return `İY: ${esc(row.ht_score)}<br>Maç sonu: ${esc(row.display_score)}`;
+      return MatchScores.html(row.ht_score,row.display_score,'finished');
     }
-    return 'Başlamadı';
+    return 'Başlamadı<br>'+MatchScores.html(null,null,'scheduled');
   }
 
   function detail(row) {

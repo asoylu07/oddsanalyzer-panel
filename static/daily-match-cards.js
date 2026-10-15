@@ -136,7 +136,7 @@ function drawDailyMatchCards() {
         const age = Date.now()-Date.parse(quoteAt);
         const fresh = Number.isFinite(age) && age >= 0 && age <= 6*3600000;
         const block = document.createElement('div');
-        block.innerHTML = `<p><strong>${escapeHTML(row.market)} · ${escapeHTML(row.selection)}</strong> <span class="odds-value">${Number(row.price).toFixed(2)}</span></p><p>${Number(row.sample)} geçmiş maç · Geçmiş gerçekleşme %${fmt(row.hit_pct)}<br>Güven alt sınırı %${fmt(row.confidence)} · ${escapeHTML(row.risk_level || 'Belirsiz')} risk</p><p class="muted">${fresh ? 'Son kontrol' : 'Güncellik uyarısı'}: ${escapeHTML(liveTime(quoteAt))}</p>`;
+        block.innerHTML = `<p><strong>${escapeHTML(row.market)} · ${escapeHTML(row.selection)}</strong> <span class="odds-value">${Number(row.price).toFixed(2)}</span></p><p>${Number(row.sample)} geçmiş maç · Geçmiş gerçekleşme %${fmt(row.hit_pct)}<br>Güven alt sınırı %${fmt(row.confidence)} · ${escapeHTML(row.risk_level || 'Belirsiz')} risk</p><p>${MatchScores.html(row.half_score,row.score,"scheduled")}</p><p class="muted">${fresh ? 'Son kontrol' : 'Güncellik uyarısı'}: ${escapeHTML(liveTime(quoteAt))}</p>`;
         const value = recommendationValueCheck(row);
         const valueNote = document.createElement('p');
         valueNote.className = 'muted';

@@ -20,7 +20,7 @@
     const rows = (data.rows || []).slice().sort((a, b) => String(a.kickoff_at_utc || '').localeCompare(String(b.kickoff_at_utc || '')));
     body.innerHTML = rows.length ? rows.map((row, index) => {
       const predictions = row.predictions || [];
-      const score = row.status === 'scheduled' ? 'Başlamadı' : `${esc(row.score)} · İY ${esc(row.half_score)}`;
+      const score = MatchScores.html(row.half_score,row.score,row.status);
       return `<tr>
         <td><strong>${index + 1}</strong></td>
         <td><strong>${esc(row.match_name)}</strong><br><small>${esc(row.competition_name)}</small></td>

@@ -109,7 +109,7 @@ function renderLiveMatches() {
     <td><strong>${escapeHTML(r.match_name)}</strong><br><small>${escapeHTML(r.competition_name || 'Lig bilinmiyor')}</small></td>
     <td>${escapeHTML(liveTime(r.kickoff_at_utc))}</td>
     <td>${escapeHTML(r.phase)}<br><small>${r.bucket === 'delayed' ? 'Güncelliği doğrulanamıyor' : r.minute ? escapeHTML(r.minute) : r.status === 'finished' ? 'Tamamlandı' : 'Dakika bilgisi yok'}</small></td>
-    <td><strong>${r.status === 'scheduled' ? '—' : escapeHTML(r.score)}</strong><br><small>İY: ${escapeHTML(r.half_score || '—')}</small>${r.stale ? '<br><small>Gecikmiş / doğrulanamayan veri</small>' : ''}</td>
+    <td>${MatchScores.html(r.half_score,r.score,r.status)}${r.stale ? '<br><small>Gecikmiş / doğrulanamayan veri</small>' : ''}</td>
     <td>${escapeHTML(liveTime(r.collected_at))}<br><small>${r.age_seconds == null ? 'Kontrol zamanı yok' : Math.floor(r.age_seconds/60) + ' dakika önce kontrol edildi'}</small>${r.source_updated_at ? '<br><small>Kaynak zamanı: '+escapeHTML(liveTime(r.source_updated_at))+'</small>' : ''}</td>
     <td>${renderPredictionGroups(r)}</td>
     <td><button type="button" disabled title="Ayrıntılı sorgu PC panelinde kullanılabilir" class="btn btn-action btn-sm live-odds" data-id="${escapeHTML(r.match_id)}">Detay PC panelinde</button></td>
@@ -437,9 +437,7 @@ async function loadMatches(page = 1) {
               ? `<span class="pill bad">${escapeHTML(r.status_tr)}</span>`
               : `<span class="pill unknown">${escapeHTML(r.status_tr || "—")}</span>`);
 
-        const scoreDisplay = r.score_text
-          ? `<span class="score-display"><strong>${escapeHTML(r.score_text)}</strong> ${r.halftime_text ? `<small class="muted">${escapeHTML(r.halftime_text)}</small>` : ""}</span>`
-          : `<span class="muted">—</span>`;
+        const scoreDisplay = MatchScores.html(r.halftime_text,r.score_text,r.status);
 
         return `
         <tr>
@@ -523,7 +521,7 @@ function conditionText(p) {
 function distributionDetails(d) {
   if (!d || !d.sample) return '<p>Bu oran koşullarına uyan sonuçlanmış maç yok.</p>';
   const metric = (label, value) => `${label}: ${value?.count || 0} (%${value?.pct || 0})`;
-  return `<details><summary>Bu oranlar birlikteyken maçlar nasıl bitmiş? (${d.sample} maç)</summary><p>${['1','0','2'].map(k => metric('MS ' + k, d.outcomes[k])).join(' · ')}</p><p>${['1-0','0-2','1-2'].map(k => metric('ÇŞ ' + k, d.double_chance[k])).join(' · ')}</p>${Object.entries(d.totals || {}).map(([line, values]) => `<p>${line} gol: ${metric('Alt', values.Alt)} · ${metric('Üst', values['Üst'])}</p>`).join('')}<p>Son eşleşmeler (en fazla 20):</p>${(d.examples || []).map(m => `<div>${escapeHTML(m.date || '')} · ${escapeHTML(m.match_name)} · ${escapeHTML(m.score)}</div>`).join('')}<p>Oranlar aynı maçın aynı kaydında eşleşir; çarpılmaz. Ana analiz tüm günleri kapsar.</p></details>`;
+  return `<details><summary>Bu oranlar birlikteyken maçlar nasıl bitmiş? (${d.sample} maç)</summary><p>${['1','0','2'].map(k => metric('MS ' + k, d.outcomes[k])).join(' · ')}</p><p>${['1-0','0-2','1-2'].map(k => metric('ÇŞ ' + k, d.double_chance[k])).join(' · ')}</p>${Object.entries(d.totals || {}).map(([line, values]) => `<p>${line} gol: ${metric('Alt', values.Alt)} · ${metric('Üst', values['Üst'])}</p>`).join('')}<p>Son eşleşmeler (en fazla 20):</p>${(d.examples || []).map(m => `<div>${escapeHTML(m.date || '')} · ${escapeHTML(m.match_name)} · ${scorePairHTML(m.half_score || m.half_time_score,m.score)}</div>`).join('')}<p>Oranlar aynı maçın aynı kaydında eşleşir; çarpılmaz. Ana analiz tüm günleri kapsar.</p></details>`;
 }
 
 function evidenceDetails(insight) {
@@ -619,12 +617,12 @@ async function openOddsModal(matchId) {
           <div class="match-result-card">
             <div class="result-teams-box">
               <span class="team-name">${escapeHTML(m.home_team || "Ev Sahibi")}</span>
-              <span class="result-score">${escapeHTML(res.score_text)}</span>
+              <span class="result-score">${MatchScores.html(res.halftime_text,res.score_text,res.status)}</span>
               <span class="team-name">${escapeHTML(m.away_team || "Deplasman")}</span>
             </div>
             <div class="result-sub-info">
               <span class="pill ok">${escapeHTML(res.status_tr)}</span>
-              ${res.halftime_text ? `<span class="ht-score">İlk Yarı: ${escapeHTML(res.halftime_text)}</span>` : ""}
+
               ${res.status_box ? `<span class="status-box-tag">${escapeHTML(res.status_box)}</span>` : ""}
               <span class="muted"><small>Sonuç Kaynağı: mackolik · Güncellenme: ${escapeHTML(res.updated_at || "—")}</small></span>
             </div>
@@ -650,6 +648,10 @@ async function openOddsModal(matchId) {
             <span class="muted">Sonuç bilgisi henüz işlenmedi veya maç oynanmadı.</span>
           </div>`;
       }
+    }
+
+    if (resEl && !(res?.status === 'finished' && res?.score_text && res.score_text !== '—')) {
+      resEl.insertAdjacentHTML('beforeend', MatchScores.html(res?.halftime_text,res?.score_text,res?.status || 'unknown'));
     }
 
     // 2. Oran Hareketleri Bannerı
@@ -973,7 +975,7 @@ function renderRecommendations(data) {
   body.innerHTML = rows.length ? rows.map((row) => `
     <tr>
       <td>${escapeHTML(row.date)}<br><small>${escapeHTML(row.weekday)}${row.kickoff_at_utc && Number.isFinite(Date.parse(row.kickoff_at_utc)) ? ' · ' + new Date(row.kickoff_at_utc).toLocaleTimeString('tr-TR', {timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit'}) : ' · Saat bilinmiyor'}</small></td>
-      <td><strong>${escapeHTML(row.match_name)}</strong><br><small>${escapeHTML(row.league)}</small></td>
+      <td><strong>${escapeHTML(row.match_name)}</strong><br><small>${escapeHTML(row.league)}</small><br>${MatchScores.html(row.half_score,row.score,row.status || "scheduled")}</td>
       <td><strong>${escapeHTML(row.market)}</strong><br><span class="selection-tag">${escapeHTML(row.selection)}</span><br><small>${escapeHTML(conditionText(row.evidence))}</small>${row.odds_fallback_used ? `<br><small class="danger">⚠ Son oran çekilemedi; eldeki son kayıt kullanıldı.${oddsTimingText(row) ? ` ${escapeHTML(oddsTimingText(row))}` : ''}</small>` : row.odds_quote_state === 'final' ? `<br><small class="success">Son oran kontrol edildi.${oddsTimingText(row) ? ` ${escapeHTML(oddsTimingText(row))}` : ''}</small>` : ''}<details><summary>Neden önerildi?</summary>${(row.explanation || []).map(x => `<p>${escapeHTML(x)}</p>`).join('')}<p>${escapeHTML(row.odds_notice || '')}${oddsTimingText(row) ? `<br>${escapeHTML(oddsTimingText(row))}` : ''}</p><p>Oran hareketi: ${escapeHTML(row.movement || 'Yeterli ölçüm yok')}${row.change_pct == null ? '' : ` (%${fmt(row.change_pct)})`} · Maça kalan süre: ${escapeHTML(row.lead_band || 'Bilinmiyor')}</p><p>${escapeHTML(forwardLine(row,7))}<br>${escapeHTML(forwardLine(row,30))}</p>${row.evidence ? `<p>Aynı kalan süre geçmişi: ${escapeHTML(evidenceText(row.evidence.same_time))}<br>Aynı hareket geçmişi: ${escapeHTML(evidenceText(row.evidence.same_movement))}</p>` : ''}<p>Güç puanı garanti değildir; ileri sonuç azsa risk yükseltilir.</p></details></td>
       <td><span class="odds-value">${Number(row.price).toFixed(2)}</span></td>
       <td><strong>${fmtNum(row.sample)}</strong></td>
@@ -1003,7 +1005,7 @@ function renderRecommendations(data) {
   if (consistencyBlocked.length) document.getElementById('recommendation-count').innerText += ` · Tutarlılık / sabit kayıt kontrolüyle gösterilmeyen: ${consistencyBlocked.length}`;
   document.getElementById('near-miss-count').textContent = `${near.length} aday`;
   document.getElementById('near-miss-body').innerHTML = near.length ? near.map(row => `<tr>
-    <td><strong>${escapeHTML(row.match_name)}</strong><br><small>${escapeHTML(row.league)} · ${escapeHTML(liveTime(row.kickoff_at_utc))}</small></td>
+    <td><strong>${escapeHTML(row.match_name)}</strong><br><small>${escapeHTML(row.league)} · ${escapeHTML(liveTime(row.kickoff_at_utc))}</small><br>${MatchScores.html(row.half_score,row.score,row.status || "scheduled")}</td>
     <td><strong>${escapeHTML(row.method)}</strong><br><small>${escapeHTML((row.legs || []).map(l => `${l.market} ${l.selection} ${Number(l.price).toFixed(2)}`).join(' + '))}</small></td>
     <td><strong>${escapeHTML(row.market)} · ${escapeHTML(row.selection)}</strong><br><span class="odds-value">${Number(row.price).toFixed(2)}</span></td>
     <td>${row.sample} geçmiş maç · %${fmt(row.hit_pct)}${row.sample < 20 ? '<br><strong>ZAYIF KANIT — küçük örnek, kazanma ihtimali değil</strong>' : ''}</td>
@@ -1121,7 +1123,7 @@ async function loadReverseMovements() {
     const url = `/api/analysis/reverse-movements?date_from=${encodeURIComponent(fromInput.value)}&date_to=${encodeURIComponent(toInput.value)}`;
     const data = await getJSON(url);
     body.innerHTML = (data.rows || []).map(rowHTML).join('') || '<tr><td colspan="6">Karşı oranı en az 1,40 olan uygun sinyal yok.</td></tr>';
-    allBody.innerHTML = (data.all_paired_rows || []).map(row => `<tr><td>${escapeHTML(row.match_name)}</td><td>${escapeHTML(row.market)} · ${escapeHTML(row.rising_selection)} ${Number(row.rising_first_price).toFixed(2)} → ${Number(row.rising_last_price).toFixed(2)}</td><td>${escapeHTML(row.opposite_selection)} · ${Number(row.opposite_last_price).toFixed(2)}</td><td>${row.eligible ? 'Uygun' : '1,40 altı'}</td><td>${row.outcome === 'won' ? 'Tuttu' : 'Tutmadı'}</td></tr>`).join('') || '<tr><td colspan="5">Eşleşme yok.</td></tr>';
+    allBody.innerHTML = (data.all_paired_rows || []).map(row => `<tr><td>${escapeHTML(row.match_name)}</td><td>${escapeHTML(row.market)} · ${escapeHTML(row.rising_selection)} ${Number(row.rising_first_price).toFixed(2)} → ${Number(row.rising_last_price).toFixed(2)}</td><td>${escapeHTML(row.opposite_selection)} · ${Number(row.opposite_last_price).toFixed(2)}</td><td>${scorePairHTML(row.half_score,row.score)}</td><td>${row.eligible ? 'Uygun' : '1,40 altı'}</td><td>${row.outcome === 'won' ? 'Tuttu' : 'Tutmadı'}</td></tr>`).join('') || '<tr><td colspan="6">Eşleşme yok.</td></tr>';
     status.textContent = `${data.scope} Ham yükselen sinyal: ${data.raw_rising_signals}; gerçek karşı oranı bulunan: ${data.paired_signals}; 1,40+ uygun: ${data.eligible_signals}. Sonuç: ${data.won} tuttu / ${data.lost} tutmadı · Başarı ${data.hit_pct == null ? '—' : '%' + data.hit_pct} · Net ${money(data.net_profit)} · ROI ${data.roi_pct == null ? '—' : '%' + data.roi_pct}.`;
   } catch (error) {
     status.textContent = 'Ters oran testi yüklenemedi: ' + error.message;
@@ -1208,7 +1210,7 @@ async function loadExperiments() {
     const data = await getJSON('/api/predictions/experiments');
     panel.innerHTML = `<h3>Tahmin Denemeleri — ${escapeHTML(data.day || '')}</h3><p>Her seçim ayrı 1.000 TL simülasyonudur; gerçek bahis değildir. İlk seçim ve oran sabittir. Bu kayıtlar normal başarı günlüğüne tekrar eklenmez. Gruplar aynı maçları içerebilir; bağımsız kazançlar değildir.</p>` +
       data.summaries.map(s => `<p><strong>${track(s.track)}</strong>: ${s.won} tuttu / ${s.lost} tutmadı / ${s.pending} bekliyor / ${s.missing} eksik / ${s.void} iade · Sonuçlanan tutar: ${money(s.settled_stake)} · Bekleyen: ${money(s.pending_stake)} · Geri dönüş: ${money(s.gross_return)} · Net: ${money(s.net_profit)}</p>`).join('') +
-      `<div class="table-responsive"><table class="data-table"><thead><tr><th>Maç / yöntem</th><th>Seçim</th><th>Sabit oran</th><th>Örnek</th><th>Kayıt zamanı</th><th>Sonuç</th><th>Geri dönüş</th><th>Net K/Z</th></tr></thead><tbody>${data.rows.map(p => `<tr><td>${escapeHTML(p.match_name)}<br>${track(p.track)} / ${escapeHTML(p.method)}</td><td>${escapeHTML(p.market)} · ${escapeHTML(p.selection)}</td><td>${p.price}</td><td>${p.sample}</td><td>${escapeHTML(liveTime(p.registered_at))}<br><small>${p.linked_journal_id ? 'Mevcut günlük kaydı: ' + p.linked_journal_id + ' · ' + escapeHTML(liveTime(p.original_journal_time)) : 'Ayrı deneme kaydı; geçmiş tarih verilmedi'}</small></td><td>${status[p.outcome]}</td><td>${money(p.gross_return)}</td><td>${money(p.net_profit)}</td></tr>`).join('')}</tbody></table></div>`;
+      `<div class="table-responsive"><table class="data-table"><thead><tr><th>Maç / yöntem</th><th>Seçim</th><th>Sabit oran</th><th>Örnek</th><th>Kayıt zamanı</th><th>Sonuç</th><th>Geri dönüş</th><th>Net K/Z</th></tr></thead><tbody>${data.rows.map(p => `<tr><td>${escapeHTML(p.match_name)}<br>${track(p.track)} / ${escapeHTML(p.method)}</td><td>${escapeHTML(p.market)} · ${escapeHTML(p.selection)}</td><td>${p.price}</td><td>${p.sample}</td><td>${escapeHTML(liveTime(p.registered_at))}<br><small>${p.linked_journal_id ? 'Mevcut günlük kaydı: ' + p.linked_journal_id + ' · ' + escapeHTML(liveTime(p.original_journal_time)) : 'Ayrı deneme kaydı; geçmiş tarih verilmedi'}</small></td><td>${MatchScores.html(p.half_score,p.score,p.status)}<br>${status[p.outcome]}</td><td>${money(p.gross_return)}</td><td>${money(p.net_profit)}</td></tr>`).join('')}</tbody></table></div>`;
     const quoteText = q => q ? `${Number(q.price).toFixed(2)}<br><small>Kayıt: ${escapeHTML(liveTime(q.captured_at))}<br>Kontrol: ${escapeHTML(liveTime(q.checked_at))}</small>` : 'Kayıt yok';
     const header = panel.querySelector('thead tr');
     ['Son kaydedilen oran', 'Son maç öncesi kayıt', 'Gerçek ölçüm hareketi'].forEach(label => {
@@ -1520,7 +1522,7 @@ function renderPatternResult(data) {
     : `<tr><td class="muted text-center p-2">Bu koşullara uyan tamamlanmış maç bulunamadı.</td></tr>`;
   const candidates = data.candidates || [];
   document.getElementById("pattern-candidates").innerHTML = candidates.length
-    ? candidates.map((match) => `<div class="candidate-row"><div><strong>${escapeHTML(match.match_name)}</strong><span>${escapeHTML(match.league)} · ${escapeHTML(match.date)} ${escapeHTML(match.weekday)}</span></div><div>${match.prices.map((p) => `<span class="odds-value">${Number(p).toFixed(2)}</span>`).join(" + ")}</div></div>`).join("")
+    ? candidates.map((match) => `<div class="candidate-row"><div><strong>${escapeHTML(match.match_name)}</strong><span>${escapeHTML(match.league)} · ${escapeHTML(match.date)} ${escapeHTML(match.weekday)}</span><br>${MatchScores.html(match.half_time_score,match.score,"scheduled")}</div><div>${match.prices.map((p) => `<span class="odds-value">${Number(p).toFixed(2)}</span>`).join(" + ")}</div></div>`).join("")
     : `<div class="empty-state"><strong>Şu an eşleşen aday yok</strong><span>İddaa oranı bulunan maçlarda bu oran ikilisi/üçlüsü görüldüğünde burada çıkacak.</span></div>`;
 }
 
