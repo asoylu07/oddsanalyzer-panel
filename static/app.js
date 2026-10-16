@@ -243,7 +243,7 @@ function switchTab(tabId, analysisKey) {
 
   if (tabId === "tab-health") {
     loadHealth();
-  } else if (tabId === "tab-analysis") {
+  } else if (tabId === "tab-analysis" && analysisKey !== "ahmet") {
     loadAnalysis();
   } else if (tabId === "tab-matches" && matchesDataLoaded === false) {
     loadMatches(1);
@@ -1344,7 +1344,7 @@ async function loadPredictionHistory() {
   } finally { predictionHistoryLoading = false; }
 }
 setInterval(() => {
-  if (currentTab === 'tab-analysis') loadAnalysis(true);
+  if (currentTab === 'tab-analysis' && document.getElementById('analysis-panel-ahmet')?.hidden !== false) loadAnalysis(true);
 }, 60000);
 document.getElementById('prediction-window')?.addEventListener('change', loadPredictionHistory);
 document.addEventListener('analysis-subtab-change', event => {
@@ -1366,7 +1366,7 @@ function ensureAnalysisOptions() {
   return analysisOptionsPromise;
 }
 document.addEventListener('analysis-subtab-change', () => {
-  if (currentTab === 'tab-analysis') loadAnalysis();
+  if (currentTab === 'tab-analysis' && document.getElementById('analysis-panel-ahmet')?.hidden !== false) loadAnalysis();
 });
 async function preloadAnalysisSections() {
   // Sequential warm-up keeps the two expensive requests from competing.
