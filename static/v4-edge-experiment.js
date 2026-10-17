@@ -11,6 +11,12 @@
   const table = (heads, rows) => '<table><thead><tr>' + heads.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
   const metrics = s => [s.total,s.settled,s.unique_matches,s.won,s.lost,s.pending,s.missing,s.void,num(s.hit_pct),num(s.net_tl),num(s.roi_pct)];
   function render(data) {
+    if (data.historical && el('v4-edge-history')) {
+      const h = data.historical;
+      const heads = ['V4 yöntemi','Kol','Kayıt','Sonuçlanan seçim','Farklı maç','Tuttu','Tutmadı','Bekleyen','Eksik sonuç','İade','Tutma %','Sanal net TL','Getiri %'];
+      const rows = h.groups.flatMap(g => [[method(g.source),'Geçmiş V4',...metrics(g.baseline)], [method(g.source),'Geçmiş · avantaj > 0',...metrics(g.positive_edge)], [method(g.source),'Filtrenin elediği',...metrics(g.excluded)]]);
+      el('v4-edge-history').innerHTML = '<h2>Geçmiş maçlarla sanal test</h2><p>' + esc(h.note) + '</p><p>Arşiv: ' + esc(h.recorded) + ' kayıt · Zaman / onay koşulunu sağlamayan: ' + esc(h.capture.invalid_or_after_kickoff || 0) + ' · Her seçim 1.000 TL sanal birim. Farklı yöntemlerde aynı maç bulunabilir.</p><div class="scroll">' + table(heads, rows) + '</div><details><summary>Geçmiş seçimler ve sonuçları</summary><div class="scroll">' + table(['Maç','Yöntem','Market','Seçim','Oran','Avantaj','Filtre','Sonuç','Net TL'], [...h.records].reverse().map(r => [r.match_name,method(r.source),r.market,r.selection,num(r.price),num(r.conservative_edge_pct),reason(r.filter_reason),outcomes[r.outcome],num(r.net_tl)])) + '</div></details>';
+    }
     el('v4-edge-status').textContent = 'Başlangıç: ' + time(data.started_at) + ' · Son kontrol: ' + time(data.updated_at) + ' · Durum: ' + (data.status || 'starting') + (data.error ? ' · ' + data.error : '');
     if (!data.groups?.length) {
       el('v4-edge-comparison').textContent = 'Deney hazırlanıyor; sonuçlanmamış gruplara başarı yüzdesi yazılmaz.';
