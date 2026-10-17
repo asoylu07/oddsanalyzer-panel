@@ -133,6 +133,7 @@ function initAnalysisSubtabs() {
 }
 
 function selectAnalysisSubtab(key, navigate = true) {
+  if(['consensus','htft-pairs'].includes(key)) key='ahmet';
   const buttons = Array.from(document.querySelectorAll('[data-analysis-tab]'));
   if (!buttons.some(button => button.dataset.analysisTab === key)) return;
   if (navigate && typeof switchTab === 'function') {
