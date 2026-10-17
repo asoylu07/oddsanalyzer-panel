@@ -29,7 +29,9 @@ function initAnalysisSubtabs() {
     ['patterns', 'İki Oran Kalıpları', '#pattern-analysis-body', 'Geçmiş analiz'],
     ['query', 'Özel Oran Sorgusu', '#pattern-legs', 'Geçmiş analiz'],
   ];
+  definitions.forEach(d => { if(d[3] === 'Tahminler' && d[0] !== 'ahmet') d[3] = 'Arşiv'; if(d[0] === 'ahmet') d[1] = 'Yeni Sanal Testler'; });
   const groupMeta = {
+    'Arşiv': ['⌛', 'Sanal testleri devam eden araçlar'],
     'Karşılaştırma': ['⇄', 'Sistemleri karşılaştır'],
     'Tahminler': ['🎯', 'Güncel seçimleri incele'],
     'İleri takip': ['↗', 'Sonuç ve test takibi'],
@@ -86,6 +88,7 @@ function initAnalysisSubtabs() {
     const button = document.createElement('button');
     button.type = 'button'; button.id = `analysis-subtab-${key}`;
     button.textContent = label; button.dataset.analysisTab = key;
+    if (['consensus','htft-pairs'].includes(key)) button.hidden = true;
     button.dataset.analysisGroup = group;
     button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', `analysis-panel-${key}`);
     menus.get(group).popover.append(button);
@@ -126,7 +129,7 @@ function initAnalysisSubtabs() {
   });
   let saved;
   try { saved = sessionStorage.getItem('analysis-subtab'); } catch (_) { /* Storage may be disabled. */ }
-  selectAnalysisSubtab(definitions.some(([key]) => key === saved) ? saved : 'systems');
+  selectAnalysisSubtab(definitions.some(([key]) => key === saved) ? saved : 'ahmet');
 }
 
 function selectAnalysisSubtab(key, navigate = true) {
