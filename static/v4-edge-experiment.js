@@ -38,7 +38,15 @@
     el('v4-filter-study').innerHTML='<h2>V4 · Kaybettiren gruplar ve ayrı filtre deneyleri</h2><p>' + esc(study.note) + '</p><p><strong>İlk bölüm: ' + esc(study.period.start) + ' ≤ tarih < ' + esc(study.cutoff) + '. Son bölüm: ' + esc(study.cutoff) + '–' + esc(study.period.end) + '.</strong> ' + (study.rules?.length || study.scopes[0].experiments.length) + ' satır: filtresiz kontrol ve ' + ((study.rules?.length || study.scopes[0].experiments.length)-1) + ' ayrı filtre. Her seçim 1.000 TL sanal birim. Rapor: ' + time(study.updated_at) + '.</p><p>Toplam netin daha az eksi olması tek başına iyileşme değildir; kalan farklı maç, getiri yüzdesi ve sonraki dönem birlikte değerlendirilir. Araştırmada iki dönemde yeterli örnekle artıda olmak bile canlı başarı kanıtı değildir.</p>' + sections + '<hr>';
     studyStamp=study.updated_at + study.frozen_sha256;
   }
+  function renderForward(data) {
+    if (!data || !el('v4-forward-variants')) return;
+    const names={combined_no_parity:'Birleşik · Tek/Çift hariç',combined_ft_1x2:'Birleşik · yalnız Maç Sonucu'};
+    const heads=['V4 yöntemi','Kol','Kayıt','Sonuçlanan','Farklı maç','Tuttu','Tutmadı','Bekleyen','Eksik','İade','Tutma %','Sanal net TL','Getiri %'];
+    const rows=(data.groups || []).flatMap(g=>[[method(g.source),'Mevcut V4 · aynı yeni dönem',...metrics(g.baseline)],...Object.keys(names).map(a=>[method(g.source),names[a],...metrics(g.arms[a].included)])]);
+    el('v4-forward-variants').innerHTML='<h2>Yeni sanal ileri takip · V4 ve iki market varyantı</h2><p>' + esc(data.note || 'Yeni dönem hazırlanıyor.') + '</p><p><strong>Başlangıç: ' + time(data.started_at) + ' · Son kontrol: ' + time(data.updated_at) + ' · Durum: ' + esc(data.status) + '</strong>' + (data.error ? ' · ' + esc(data.error) : '') + '</p><div class="scroll">' + table(heads,rows) + '</div><p>Gözlenen kayıt: ' + num(data.recorded || 0) + ' · Zaman koşulunu sağlamayan / kaçırılan yeni kaynak kaydı: ' + num(data.capture?.missed_or_not_prospective || 0) + ' · Geçersiz / onaysız: ' + num(data.capture?.invalid_or_unapproved || 0) + '. Sonuç yokken tutma ve getiri yüzdesi hesaplanmaz.</p><details><summary>Her varyantın elediği seçimlerin sonucu</summary><div class="scroll">' + table(heads,(data.groups || []).flatMap(g=>Object.keys(names).map(a=>[method(g.source),names[a],...metrics(g.arms[a].excluded)]))) + '</div></details><details><summary>Son 300 yeni gözlem · seçim, oran ve kol kararları</summary><div class="scroll">' + table(['Maç','Yöntem','Market','Seçim','Oran','Güven','Tek/Çift hariç','Yalnız Maç Sonucu','Sonuç','Net TL'],[...(data.records || [])].reverse().map(r=>[r.match_name,method(r.source),r.market,r.selection,num(r.price),num(r.trust_score),r.arms.combined_no_parity?'Dahil':'Elendi',r.arms.combined_ft_1x2?'Dahil':'Elendi',outcomes[r.outcome],num(r.net_tl)])) + '</div></details><hr>';
+  }
   function render(data) {
+    renderForward(data.forward_variants);
     renderStudy(data.filter_study);
     if (data.replay && el('v4-edge-replay')) {
       const r = data.replay;
