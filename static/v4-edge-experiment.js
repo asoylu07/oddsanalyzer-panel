@@ -12,7 +12,9 @@
   const metrics = s => [s.total,s.settled,s.unique_matches,s.won,s.lost,s.pending,s.missing,s.void,num(s.hit_pct),num(s.net_tl),num(s.roi_pct)];
   let studyStamp = '';
   function renderStudy(study) {
-    if (!study || !el('v4-filter-study') || studyStamp === study.updated_at + study.frozen_sha256) return;
+    if (!el('v4-filter-study')) return;
+    if (!study) { if (studyStamp) el('v4-filter-study').textContent='Güncel yeniden testle eşleşen filtre raporu henüz yok.'; studyStamp=''; return; }
+    if (studyStamp === study.updated_at + study.frozen_sha256) return;
     const scopeName = id => ({approved:'V4 onay eşiklerini geçen',research:'Geniş araştırma · reddedilen adaylar dahil',sample25:'Araştırma · yalnız örneği ≥ 25 olan adaylar'}[id] || id);
     const familyName = value => { if (!value.includes('|')) return value; const [kind,period,side]=value.split('|'); return ({'1X2':'Maç sonucu','DC':'Çifte şans','ODD_EVEN':'Tek/Çift','OU':'Alt/Üst','TEAM_OU':'Takım Alt/Üst','BTTS':'Karşılıklı gol','HANDICAP_1X2':'Handikap sonucu','RESULT_OU':'Sonuç ve Alt/Üst','MOST_GOALS_HALF':'En çok gol olan yarı'}[kind] || kind) + ' · ' + ({FT:'Tam maç',HT:'İlk yarı',SH:'İkinci yarı'}[period] || period) + (side ? ' · ' + ({HOME:'Ev sahibi',AWAY:'Deplasman'}[side] || side) : ''); };
     const lossTable = rows => table(['Grup','Sonuç','Farklı maç','Tuttu','Tutmadı','Tutma %','Net TL','Getiri %','Örnek durumu'], rows.map(r => [familyName(r.label),r.settled,r.unique_matches,r.won,r.lost,num(r.hit_pct),num(r.net_tl),num(r.roi_pct),r.unique_matches<30?'30 maçtan az':'En az 30 maç']));
