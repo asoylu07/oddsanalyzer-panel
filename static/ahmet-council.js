@@ -1,0 +1,14 @@
+(() => {
+ const el=id=>document.getElementById(id),esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const date=v=>v?new Date(v).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}):'—';
+ const score=v=>Array.isArray(v)&&v.every(x=>Number.isInteger(x))?v.join('–'):'—';
+ const names={pending:'Bekliyor',won:'Tuttu',lost:'Yattı',void:'İade',missing:'90 dakika sonucu bekleniyor'};
+ const metric=s=>`${esc(s.total)} kayıt · ${esc(s.settled)} sonuç · ${esc(s.won)} tuttu / ${esc(s.lost)} yattı · ${esc(s.pending)} bekliyor · ${esc(s.missing)} eksik sonuç · tutma ${s.hit_pct==null?'—':'%'+esc(s.hit_pct)} · net ${esc(s.net_tl)} TL · ROI ${s.roi_pct==null?'—':'%'+esc(s.roi_pct)}`;
+ function table(rows,preview){return rows.length?'<table><tr><th>Maç / Başlangıç</th><th>Uzman / Kaynak</th><th>Seçim / Oran</th><th>Gerçek kayıt saati</th><th>Oran gözlemi / doğrulama</th><th>İY / MS</th><th>Sonuç / Net</th></tr>'+rows.map(p=>'<tr><td>'+esc(p.match_name)+'<br>'+esc(date(p.kickoff_at_utc))+'</td><td>'+esc(p.expert_name)+'<br>'+esc(p.source)+'</td><td>'+esc(p.market)+' / '+esc(p.selection)+'<br>'+esc(p.price)+'</td><td>'+esc(preview?'Önizleme':date(p.created_at))+(preview?'':'<br><small>'+esc(p.version)+' · '+esc(p.model_sha256?.slice(0,8))+'</small>')+'</td><td>'+esc(date(p.source_observed_at||p.captured_at))+'<br>'+esc(date(p.source_verified_at||p.verified_at))+'</td><td>'+esc(score(p.ht_score))+' / '+esc(score(p.ft_score))+'</td><td>'+esc(preview?'Kayıt değil':names[p.outcome])+'<br>'+esc(p.net_tl)+' TL</td></tr>').join('')+'</table>':'<p>Henüz '+(preview?'uygun önizleme':'kalıcı ileri kayıt')+' yok. Yüzde hesaplanmadı.</p>';}
+ async function load(){try{const r=await fetch('/api/ahmet-council');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();el('status').textContent=`Durum: ${d.status} · Başlangıç: ${date(d.started_at)} · Son kontrol: ${date(d.updated_at)} · Nesine doğrulama: ${date(d.feed_at)} · ${d.counts?.fixtures_checked??0} maç tarandı · ${d.counts?.waiting_window??0} aday pencereyi bekliyor${d.error?' · '+d.error:''}`;
+ el('summary').innerHTML='<article><h2>Yalnız yeni ileri test</h2><p>'+metric(d.summary)+'</p><p>Sonuç sayısı azsa yüksek yüzde başarı kanıtı değildir.</p></article>';
+ el('groups').innerHTML=[...(d.source_groups||[]),...(d.expert_groups||[])].map(g=>'<article><h3>'+esc(g.name||g.source)+'</h3><p>'+metric(g)+'</p></article>').join('');
+ el('records').innerHTML=table(d.records||[],false);el('preview').innerHTML=table(d.preview||[],true);
+ }catch(e){el('status').textContent='Kontrol hatası: '+e.message;}}
+ load();setInterval(load,15000);
+})();
