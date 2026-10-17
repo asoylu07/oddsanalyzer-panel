@@ -129,7 +129,7 @@ function initAnalysisSubtabs() {
   });
   let saved;
   try { saved = sessionStorage.getItem('analysis-subtab'); } catch (_) { /* Storage may be disabled. */ }
-  selectAnalysisSubtab(definitions.some(([key]) => key === saved) ? saved : 'ahmet');
+  selectAnalysisSubtab(saved === 'ahmet' ? saved : 'ahmet');
 }
 
 function selectAnalysisSubtab(key, navigate = true) {
