@@ -22,7 +22,7 @@
     el('v4-edge-excluded').innerHTML = table(['V4 yöntemi',...heads.slice(2)], data.groups.map(group => [method(group.source),...metrics(group.excluded)]));
     const all = data.groups.find(group => group.source === 'all');
     const capture = data.capture || {};
-    el('v4-edge-capture').textContent = (data.recorded ? 'Gözlenen kayıt: ' + data.recorded : 'Henüz yeni uygun V4 kaydı gözlenmedi.') + ' · Deney kapsamı: ' + num(all?.coverage_pct) + '%' + ' · Başlamış / zaman koşulu sağlanmamış yeni kaynak kaydı: ' + (capture.missed_or_not_prospective || 0) + ' · Geçersiz / onaysız: ' + (capture.invalid_or_unapproved || 0) + ' · Güncelleme: yaklaşık 15 saniye.';
+    el('v4-edge-capture').textContent = (data.recorded ? 'Gözlenen kayıt: ' + data.recorded : 'Henüz yeni uygun V4 kaydı gözlenmedi.') + ' · Deney kapsamı: ' + num(all?.coverage_pct) + '%' + ' · Başlamış / zaman koşulu sağlanmamış yeni kaynak kaydı: ' + (capture.missed_or_not_prospective || 0) + ' · Geçersiz / onaysız: ' + (capture.invalid_or_unapproved || 0) + ' · Web aktarımı yaklaşık 6 dakika; kaynak kontrol zamanı yukarıda gösterilir.';
     el('v4-edge-records').innerHTML = data.records?.length ? table(['Maç','V4 yöntemi','Başlangıç (TR)','Market','Seçim','Oran','Temkinli avantaj (puan)','Filtre kararı','Sonuç','Sanal net TL'], [...data.records].reverse().map(row => [row.match_name,method(row.source),time(row.kickoff_at_utc),row.market,row.selection,num(row.price),num(row.conservative_edge_pct),reason(row.filter_reason),outcomes[row.outcome] || row.outcome,num(row.net_tl)])) : '<p>İlk yeni kayıt bekleniyor.</p>';
   }
   let busy = false;
