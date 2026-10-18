@@ -1,1 +1,1 @@
-{"collector_interval_seconds":15,"counts":{"delayed":0,"finished":0,"live":0,"other":0,"paused":0,"scheduled":0},"date":"2026-10-19","generated_at":"2026-10-17T21:45:21.349225+00:00","odds_source":"mackolik","refresh_seconds":15,"rows":[],"stale_after_seconds":1200}
+{"collector_interval_seconds":15,"counts":{"delayed":0,"finished":0,"live":0,"other":0,"paused":0,"scheduled":0},"date":"2026-10-19","generated_at":"2026-10-17T21:50:36.884261+00:00","odds_source":"mackolik","refresh_seconds":15,"rows":[],"stale_after_seconds":1200}
